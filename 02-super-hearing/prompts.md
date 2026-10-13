@@ -16,6 +16,24 @@ prompt library built from your own questions.
 
 ### 1.
 
+Whats  missing across the wikis
+
 ### 2.
 
+whats contradictory or missing across the wiki pages, the handover note and the rest of the folder?
+
 ### 3.
+
+did anyone say something that nobody else mentioned?
+
+### 4.
+
+who filled these? give me a list of names and how many filled out each.
+
+### 5.
+
+only look at what came in after august . whats different about these compared to everything else
+
+### 6.
+
+if both piles are telling the truth how can both be right?
