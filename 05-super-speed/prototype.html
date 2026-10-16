@@ -100,6 +100,24 @@
   .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 600; margin-top: 4px; }
   .nothing { font-size: 13px; color: var(--muted); font-style: italic; }
 
+  /* No-pings alert */
+  .alerts { margin-bottom: 14px; border: 1px solid var(--hot); background: var(--hot-soft); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .alerts .head { display: flex; align-items: center; gap: 8px; font-weight: 700; }
+  .alerts .bell { width: 22px; height: 22px; border-radius: 50%; background: var(--hot); color: var(--panel);
+    display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; flex: none; }
+  .alerts ul { margin: 6px 0 0; padding-left: 30px; }
+  .alerts li { margin-bottom: 2px; }
+  .alerts .caveat { margin: 6px 0 0 30px; font-size: 12px; color: var(--muted); }
+  .days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .day { border: 1px solid var(--line); border-radius: 6px; background: transparent; color: var(--ink); padding: 4px 0 3px; text-align: center; line-height: 1.15; }
+  .day .dn { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; }
+  .day .dc { font-weight: 700; font-size: 14px; }
+  .day.zero .dc { color: var(--muted); }
+  .day.alert { border-color: var(--hot); background: var(--hot-soft); }
+  .day.alert .dc { color: var(--hot); }
+  .day[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .daynote { font-size: 13px; color: var(--muted); min-height: 1.2em; }
+
   .tell { margin-top: 14px; border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
   .tell small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 3px; }
   .tell.today q { font-style: italic; }
@@ -194,6 +212,11 @@
   </div>
   <b>Week of</b>
   <div class="seg" role="group" aria-label="Week" id="weeks"></div>
+  <b>No-ping alert after</b>
+  <div class="seg" role="group" aria-label="Alert rule">
+    <button id="rule1">1 day</button>
+    <button id="rule2">2 days in a row</button>
+  </div>
   <button class="reset" id="reset">Reset</button>
 </div>
 
@@ -220,6 +243,7 @@
           <button class="send" id="send">Send a callout to Meteor Mite</button>
         </div>
 
+        <div id="alerts"></div>
         <div class="cards">
           <article class="card" aria-label="Meteor Mite coverage card">
             <div class="card-head">
@@ -233,6 +257,8 @@
               <div class="bars" id="miteBars" aria-hidden="true"></div>
             </div>
             <div class="split" id="miteSplit"></div>
+            <div class="days" id="miteDays" aria-label="Meteor Mite's pings per day"></div>
+            <div class="daynote" id="dayNote"></div>
             <div id="miteWhy"></div>
           </article>
 
@@ -342,6 +368,19 @@
   ].map(([at, outcome, area, by]) => ({ at, outcome, area, by }));
 
   const MITE_USUAL = 11, GALE_USUAL = 13;
+  // Per day, 27 Jul – 6 Sep: [Meteor Mite's pings, Eastgate callouts, of which The Gale took]
+  const DAILY = [
+    [3,4,1],[3,5,3],[0,1,1],[3,2,0],[0,3,3],[1,2,1],[2,4,2],
+    [1,4,2],[1,3,2],[2,2,1],[4,2,0],[0,0,0],[3,3,0],[0,5,5],
+    [2,2,1],[1,4,2],[1,0,0],[2,1,1],[1,3,3],[2,2,0],[1,3,2],
+    [0,4,4],[1,2,2],[1,1,0],[1,2,0],[0,2,2],[1,2,2],[0,2,2],
+    [0,2,1],[0,3,2],[0,2,2],[1,0,0],[0,4,4],[1,1,1],[0,4,4],
+    [0,1,0],[0,3,3],[0,1,1],[0,2,2],[0,5,5],[1,5,5],[0,0,0],
+  ].map(([mite, east, gale], k) => ({ date: new Date(Date.UTC(2026, 6, 27 + k)), mite, east, gale }));
+  const dayLabel = d => `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
+  // A quiet day: no pings for Meteor Mite while Eastgate had callouts she could have been offered.
+  const quiet = k => k >= 0 && DAILY[k].mite === 0 && DAILY[k].east > 0;
+  const alertsOn = k => state.rule === 1 ? quiet(k) : quiet(k) && quiet(k - 1);
   const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
@@ -362,7 +401,7 @@
 
   let state;
   function fresh(prev) {
-    return { mode: prev ? prev.mode : "new", week: prev ? prev.week : 5, live: [],
+    return { mode: prev ? prev.mode : "new", week: prev ? prev.week : 5, live: [], rule: prev ? prev.rule : 2, day: null,
              drawerOpen: false, timer: null, flashLive: false };
   }
   state = fresh();
@@ -374,7 +413,7 @@
   if (EMBED) {
     document.body.classList.add("embed");
     window.addEventListener("message", e => {
-      if (e.data && typeof e.data.week === "number" && WEEKS[e.data.week]) { state.week = e.data.week; render(); }
+      if (e.data && typeof e.data.week === "number" && WEEKS[e.data.week]) { state.week = e.data.week; state.day = null; render(); }
     });
     new ResizeObserver(() => parent.postMessage({ height: document.documentElement.scrollHeight, mode: state.mode }, "*"))
       .observe(document.body);
@@ -529,13 +568,56 @@
     $("modeNew").setAttribute("aria-pressed", state.mode === "new");
     $("weeks").innerHTML = WEEKS.map((w, i) =>
       `<button data-w="${i}" aria-pressed="${i === state.week}">${w.label}${w.ship ? '<span class="ship">4.2 ships</span>' : ""}</button>`).join("");
-    $("weeks").querySelectorAll("button").forEach(b => b.onclick = () => { state.week = +b.dataset.w; render(); });
+    $("weeks").querySelectorAll("button").forEach(b => b.onclick = () => { state.week = +b.dataset.w; state.day = null; render(); });
+    $("rule1").setAttribute("aria-pressed", state.rule === 1);
+    $("rule2").setAttribute("aria-pressed", state.rule === 2);
     const [a, b] = STORY[WEEKS[state.week].key];
     $("storyText").textContent = a;
     $("storyFact").textContent = b;
   }
 
-  function render() { renderControls(); renderCards(); renderDrawer(); renderPhone(); }
+  function renderAlerts() {
+    const i = state.week, fixed = state.mode === "new", first = i * 7;
+    const days = DAILY.slice(first, first + 7);
+    $("miteDays").innerHTML = days.map((d, j) => {
+      const k = first + j, on = fixed && alertsOn(k);
+      return `<button class="day ${d.mite === 0 ? "zero" : ""} ${on ? "alert" : ""}" data-k="${k}" aria-pressed="${state.day === k}"
+        title="${dayLabel(d.date)}: ${d.mite} ping${d.mite === 1 ? "" : "s"}"><span class="dn">${DAYS[d.date.getUTCDay()]}</span><span class="dc">${on ? "!" : d.mite}</span></button>`;
+    }).join("");
+    $("miteDays").querySelectorAll(".day").forEach(b => b.onclick = () => { state.day = state.day === +b.dataset.k ? null : +b.dataset.k; renderAlerts(); });
+
+    if (state.day !== null && state.day >= first && state.day < first + 7) {
+      const d = DAILY[state.day];
+      const gale = d.gale ? `The Gale took ${d.gale}.` : "";
+      $("dayNote").textContent = d.mite
+        ? `${dayLabel(d.date)}: ${d.mite} ping${d.mite === 1 ? "" : "s"} for Meteor Mite. ${d.east} Eastgate callout${d.east === 1 ? "" : "s"}.`
+        : d.east
+          ? `${dayLabel(d.date)}: no pings for Meteor Mite, while ${d.east} Eastgate callout${d.east === 1 ? "" : "s"} went out. ${gale}`
+          : `${dayLabel(d.date)}: no pings, but no Eastgate callouts either, so no alert.`;
+    } else {
+      $("dayNote").textContent = fixed ? "Pings per day. Click a day for detail." : "";
+    }
+
+    if (!fixed) { $("alerts").innerHTML = ""; return; }
+    const hits = days.map((d, j) => first + j).filter(alertsOn);
+    if (!hits.length) { $("alerts").innerHTML = ""; return; }
+    const items = hits.map(k => {
+      const d = DAILY[k];
+      if (state.rule === 1)
+        return `<li>${dayLabel(d.date)}: no pings for Meteor Mite, while ${d.east} Eastgate callout${d.east === 1 ? "" : "s"} went out${d.gale ? ` (The Gale took ${d.gale})` : ""}.</li>`;
+      let start = k; while (quiet(start - 1)) start--;
+      const n = k - start + 1, total = DAILY.slice(start, k + 1).reduce((a, x) => a + x.east, 0);
+      return `<li>${dayLabel(d.date)}: no pings for Meteor Mite for ${n} days in a row (since ${dayLabel(DAILY[start].date)}), while ${total} Eastgate callouts went out.</li>`;
+    });
+    const normal = i < 2;
+    $("alerts").innerHTML = `<div class="alerts" role="status">
+      <div class="head"><span class="bell">!</span>Meteor Mite: ${hits.length} no-ping alert${hits.length === 1 ? "" : "s"} this week</div>
+      <ul>${items.join("")}</ul>
+      ${normal ? `<div class="caveat">This was a normal week: she took ${weekNums(i).mite[0]} of ${weekNums(i).miteTotal} pings. One quiet day on its own can just be The Gale getting there first.</div>` : ""}
+    </div>`;
+  }
+
+  function render() { renderControls(); renderCards(); renderAlerts(); renderDrawer(); renderPhone(); }
 
   function sendPing() {
     if (state.timer) return;
@@ -568,6 +650,8 @@
   $("closeDrawer").onclick = () => { state.drawerOpen = false; renderDrawer(); };
   $("modeOld").onclick = () => { state.mode = "old"; render(); };
   $("modeNew").onclick = () => { state.mode = "new"; render(); };
+  $("rule1").onclick = () => { state.rule = 1; render(); };
+  $("rule2").onclick = () => { state.rule = 2; render(); };
   $("reset").onclick = () => {
     if (state.timer) { clearInterval(state.timer); }
     $("incoming").classList.remove("show"); $("send").disabled = false;

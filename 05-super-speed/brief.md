@@ -21,9 +21,14 @@ The glossary already says missed is "recorded separately from turned down". The 
 
 The line links to that responder's recent pings: taken / turned down / missed, with the time of each. Kip can now tell Mite something true, like "you're not forgotten, you're missing them, check your notifications", instead of "hang in there". It also explains the other card: The Gale is busy *because* Mite is quiet.
 
-**3. Mite's phone tells Mite what happened.** After a missed ping, the app says: *"You missed a ping at 23:14. It went to another responder. Missed pings don't count against you the way turning one down does."* If several misses land close together, it adds: *"Several pings missed recently. Check that notifications are on for Rook."* Silence no longer means "something's broken" or "they've dropped me".
+**3. Kip gets an alert after two days in a row with no pings.** If Meteor Mite gets no pings for two days running, while Eastgate had callouts she could have been offered, Kip's console flags it:
+> *Tue 25 Aug: no pings for Meteor Mite for 3 days in a row (since Sun 23 Aug), while 7 Eastgate callouts went out.*
 
-**4. One-time catch-up for the four.** At launch, the four affected responders go back to where their scores stood before 12 Aug, so they don't have to earn their way out of a hole we dug.
+Her card also shows her pings day by day, so the quiet days stand out. We recommend two days, not one. In her real data, a one-day rule would have fired three times in the two normal weeks before 4.2 (29 Jul, 31 Jul, 9 Aug), when The Gale simply got there first. The two-day rule never fires before 4.2, and from 24 Aug it catches every stretch of two or more quiet days. It is a fixed rule, not a setting.
+
+**4. Mite's phone tells Mite what happened.** After a missed ping, the app says: *"You missed a ping at 23:14. It went to another responder. Missed pings don't count against you the way turning one down does."* If several misses land close together, it adds: *"Several pings missed recently. Check that notifications are on for Rook."* Silence no longer means "something's broken" or "they've dropped me".
+
+**5. One-time catch-up for the four.** At launch, the four affected responders go back to where their scores stood before 12 Aug, so they don't have to earn their way out of a hole we dug.
 
 ## What it deliberately doesn't do
 - **Doesn't change the ping wait.** 60 vs 90 seconds is a separate decision, made after this lands and Ravi Menon's numbers show what's left.
