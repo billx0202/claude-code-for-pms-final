@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Before and After</title>
+<style>
+  :root { --bg: #e7e9ed; --panel: #fff; --ink: #1c1f24; --muted: #646b76; --line: #d7dae0;
+    --before: #b8402f; --before-soft: #fae6e2; --after: #2e7d4f; --after-soft: #e4f3ea; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg: #0e1013; --panel: #1b1e23; --ink: #e7e8ea; --muted: #9aa1ab; --line: #2f343b;
+      --before: #ee8e7f; --before-soft: #3d221d; --after: #7fcf9d; --after-soft: #1c3226; }
+  }
+  :root[data-theme="dark"] { --bg: #0e1013; --panel: #1b1e23; --ink: #e7e8ea; --muted: #9aa1ab; --line: #2f343b;
+    --before: #ee8e7f; --before-soft: #3d221d; --after: #7fcf9d; --after-soft: #1c3226; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+  header { background: #1c1f24; color: #fff; padding: 14px 20px; display: flex; flex-wrap: wrap; gap: 10px 20px; align-items: center; }
+  header h1 { font-size: 17px; margin: 0; }
+  header .sub { font-size: 13px; opacity: .75; }
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid rgba(255,255,255,.35); border-radius: 6px; overflow: hidden; margin-left: auto; }
+  .seg button { font: inherit; font-size: 13px; cursor: pointer; background: transparent; color: #fff; border: 0; padding: 6px 12px; }
+  .seg button + button { border-left: 1px solid rgba(255,255,255,.18); }
+  .seg button[aria-pressed="true"] { background: #fff; color: #1c1f24; font-weight: 600; }
+  .seg .ship { display: block; font-size: 10px; opacity: .75; line-height: 1; }
+  .story { max-width: 1900px; margin: 14px auto 0; padding: 0 20px; }
+  .story p { margin: 0; background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 10px 14px; font-size: 14px; }
+  .story .fact { background: none; border: 0; padding: 4px 2px 0; color: var(--muted); font-size: 12px; }
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 14px 20px 24px; max-width: 1900px; margin: 0 auto; }
+  .col { border-radius: 12px; overflow: hidden; border: 2px solid var(--line); background: var(--bg); }
+  .col.before { border-color: var(--before); } .col.after { border-color: var(--after); }
+  .label { padding: 10px 14px; font-size: 14px; display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .before .label { background: var(--before-soft); } .after .label { background: var(--after-soft); }
+  .label b { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; }
+  .before .label b { color: var(--before); } .after .label b { color: var(--after); }
+  .label span { color: var(--muted); font-size: 13px; }
+  iframe { display: block; width: 100%; height: 1400px; border: 0; background: var(--bg); }
+  .note { max-width: 1900px; margin: 0 auto; padding: 0 20px 28px; color: var(--muted); font-size: 13px; }
+  @media (max-width: 1100px) { .cols { grid-template-columns: 1fr; } .seg { margin-left: 0; } }
+  @media (max-width: 640px) { header, .story, .cols, .note { padding-left: 16px; padding-right: 16px; } }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Meteor Mite, before and after the fix</h1>
+    <div class="sub">Same week, same pings. Left is what Kip and Meteor Mite get today; right is what they'd get with the fix.</div>
+  </div>
+  <div class="seg" role="group" aria-label="Week" id="weeks"></div>
+</header>
+
+<div class="story" aria-live="polite">
+  <p id="storyText"></p>
+  <p class="fact" id="storyFact"></p>
+</div>
+
+<div class="cols">
+  <section class="col before" aria-label="Before: today, 4.2">
+    <div class="label"><b>Before · today (4.2)</b><span>A miss counts like a turn-down. Nobody is told.</span></div>
+    <iframe id="before" title="Before: today (4.2)" src="prototype.html?embed=1&mode=old&week=5"></iframe>
+  </section>
+  <section class="col after" aria-label="After: with the fix">
+    <div class="label"><b>After · with the fix</b><span>A miss is its own, smaller thing, and both screens explain it.</span></div>
+    <iframe id="after" title="After: with the fix" src="prototype.html?embed=1&mode=new&week=5"></iframe>
+  </section>
+</div>
+
+<p class="note">
+  Both sides use Meteor Mite's and The Gale's real ping records (27 Jul – 5 Sep). Pick a week above and both sides move together.
+  Each side is fully clickable: open her recent pings, or send her a callout and take it, turn it down or let it run out.
+  The ping counts on the right are still what actually happened. With the fix, her drop would have been much smaller.
+  Keep this page in the same folder as prototype.html.
+</p>
+
+<script>
+  const WEEKS = [
+    { label: "27 Jul" }, { label: "3 Aug" }, { label: "10 Aug", ship: true },
+    { label: "17 Aug" }, { label: "24 Aug" }, { label: "31 Aug" },
+  ];
+  const STORY = [
+    ["A normal week. Meteor Mite and The Gale split Eastgate between them, and the two sides look the same.",
+     "Meteor Mite: 12 pings, 1 missed. She was offered first on 7 of 21 Eastgate callouts."],
+    ["Still normal. Meteor Mite takes 8 of her 11 pings. Nothing differs between the sides yet.",
+     "No misses all week. Ping wait is 90 seconds."],
+    ["4.2 ships on Wednesday 12 Aug and the ping wait drops to 60 seconds. On 13–14 Aug, Meteor Mite misses three pings in a row. This is where the sides split.",
+     "Before: each miss is scored like a turn-down and she never hears about it. After: each miss shows on her phone, and Kip's card flags it."],
+    ["Meteor Mite drops from about 11 pings a week to 4. Eastgate work starts going to The Gale first.",
+     "She was offered first on 2 of 15 Eastgate callouts. The Gale took 12."],
+    ["Two pings all week, and she takes neither. Before, Kip's two cards tell 'wildly different stories' with no reason given.",
+     "Offered first on 1 of 16 Eastgate callouts. The Gale took 14."],
+    ["The week Kip talked to Sofia (4 Sep). Before, Kip tells her to hang in there. After, Kip can tell her what happened and that it's been fixed.",
+     "One ping all week, on Saturday, and it was missed. The Gale took 16 of 17 Eastgate callouts."],
+  ];
+  let week = 5;
+  const frames = [document.getElementById("before"), document.getElementById("after")];
+
+  function render() {
+    const seg = document.getElementById("weeks");
+    seg.innerHTML = WEEKS.map((w, i) =>
+      `<button data-w="${i}" aria-pressed="${i === week}">${w.label}${w.ship ? '<span class="ship">4.2 ships</span>' : ""}</button>`).join("");
+    seg.querySelectorAll("button").forEach(b => b.onclick = () => {
+      week = +b.dataset.w;
+      frames.forEach(f => f.contentWindow && f.contentWindow.postMessage({ week }, "*"));
+      render();
+    });
+    document.getElementById("storyText").textContent = STORY[week][0];
+    document.getElementById("storyFact").textContent = STORY[week][1];
+  }
+
+  window.addEventListener("message", e => {
+    if (!e.data || typeof e.data.height !== "number") return;
+    const f = e.data.mode === "old" ? frames[0] : frames[1];
+    f.style.height = Math.max(600, e.data.height) + "px";
+  });
+
+  render();
+</script>
+</body>
+</html>
