@@ -7,8 +7,8 @@
 <style>
   :root {
     --bg: #eef0f3; --panel: #ffffff; --ink: #1c1f24; --muted: #646b76; --line: #dfe2e7;
-    --accent: #2f5d8a; --accent-soft: #e6eef6;
-    --taken: #2e7d4f; --taken-soft: #e4f3ea;
+    --accent: #5b6b1e; --accent-soft: #eef1dd; --accent-strong: #556320;
+    --taken: #1d7766; --taken-soft: #e0f2ee;
     --down: #7a5bb5; --down-soft: #efe9f8;
     --missed: #b36a12; --missed-soft: #fbefdf;
     --hot: #b8402f; --hot-soft: #fae6e2;
@@ -17,8 +17,8 @@
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
       --bg: #121417; --panel: #1b1e23; --ink: #e7e8ea; --muted: #9aa1ab; --line: #2f343b;
-      --accent: #8db5dd; --accent-soft: #1f2c3a;
-      --taken: #7fcf9d; --taken-soft: #1c3226;
+      --accent: #b6c46b; --accent-soft: #2a3018; --accent-strong: #556320;
+      --taken: #74cfbd; --taken-soft: #173430;
       --down: #b9a2e6; --down-soft: #2b2440;
       --missed: #e8ad62; --missed-soft: #3a2b18;
       --hot: #ee8e7f; --hot-soft: #3d221d;
@@ -27,8 +27,8 @@
   }
   :root[data-theme="dark"] {
     --bg: #121417; --panel: #1b1e23; --ink: #e7e8ea; --muted: #9aa1ab; --line: #2f343b;
-    --accent: #8db5dd; --accent-soft: #1f2c3a;
-    --taken: #7fcf9d; --taken-soft: #1c3226;
+    --accent: #b6c46b; --accent-soft: #2a3018; --accent-strong: #556320;
+    --taken: #74cfbd; --taken-soft: #173430;
     --down: #b9a2e6; --down-soft: #2b2440;
     --missed: #e8ad62; --missed-soft: #3a2b18;
     --hot: #ee8e7f; --hot-soft: #3d221d;
@@ -161,7 +161,7 @@
   .ghost { font-size: 12px; color: var(--muted); font-style: italic; text-align: center; border: 1px dashed var(--line); border-radius: 10px; padding: 8px; }
   @keyframes slide { from { transform: translateY(-10px); opacity: 0; } to { transform: none; opacity: 1; } }
 
-  .incoming { position: absolute; inset: 0; background: var(--accent); color: #fff; display: none; flex-direction: column;
+  .incoming { position: absolute; inset: 0; background: var(--accent-strong); color: #fff; display: none; flex-direction: column;
     padding: 50px 22px 28px; gap: 10px; }
   .incoming.show { display: flex; animation: slide .25s ease-out; }
   .incoming .kicker { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; opacity: .85; }
@@ -174,7 +174,7 @@
   .meter i { display: block; height: 100%; background: #fff; width: 100%; }
   .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
   .acts button { border: 0; border-radius: 12px; padding: 13px; font-weight: 700; font-size: 15px; }
-  .acts .take { background: #fff; color: #2f5d8a; }
+  .acts .take { background: #fff; color: #556320; }
   .acts .decline { background: rgba(255,255,255,.18); color: #fff; }
   .letmiss { background: none; border: 0; color: #fff; opacity: .85; text-decoration: underline; font-size: 13px; margin-top: 8px; }
 
