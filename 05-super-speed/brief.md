@@ -10,7 +10,7 @@ The glossary already says missed is "recorded separately from turned down". The 
 ## Who it's for
 **Kip**, handler for Meteor Mite and The Gale. On 4 Sep Kip told Sofia Marino that the two coverage cards "might as well be two different products". Mite is dead quiet and texting to ask if something's broken. The Gale is exhausted (+42% pings). Kip's answer to Mite was "hang in there", because the console gave Kip nothing better.
 
-**Meteor Mite**, the responder who went quiet. Farlight is the most severe case, and the one we traced ping by ping in the data. We're designing for Mite because Mite's handler is on record. The same design covers Farlight.
+**Meteor Mite**, the responder who went quiet. Farlight is the most severe case, and the one we traced ping by ping in the data. We're designing for Mite because Mite's handler is on record. The same design covers all four, and the prototype shows each of them with their handler: Kip, Linda Pruitt (Farlight), Desmond Okafor (The Undertow) and Aunt Dot (Vesper).
 
 ## What changes for them
 
@@ -83,8 +83,19 @@ The prototype (`prototype.html`) now covers all four responders and shows this c
 | **Acceptance rate looks like it jumps.** Splitting missed from turned down changes the weekly report. | Someone reads it as a real change. | Ravi marks the change in the report and shows both series side by side for a few weeks. |
 | **Thin evidence.** Data ends 6 Sep, covers 16 responders, and has no previous year to compare. | The pattern doesn't hold once newer data is in. | Ravi re-runs the ping analysis on data since 6 Sep before we commit. |
 
+## How we'll know it worked
+Checked in Ravi Menon's weekly report, and reviewed with Helen four weeks after launch:
+- **The four are back in the rotation.** Within four weeks of launch, Farlight, The Undertow, Meteor Mite and Vesper each get at least 6 pings a week for callouts in their own area. Before 4.2 that was about 10, and in the last week of data it was 0–1.
+- **Missed is counted on its own.** From launch week, the report shows acceptance rate split into taken, turned down and missed.
+- **Nobody else pays for it.** Time-to-accept and the share of unfilled callouts are no worse than in the four weeks before launch.
+- **The tickets stop.** The 45 open callout tickets are answered in launch week, and no new "phone gone quiet" tickets arrive after week two.
+
+If the four aren't back above 6 a week by the review, we take that as the signal to change the ping wait. The replay says that if misses stay at 6 in 10, the fix only halves the drop.
+
 ## Owner and open questions
-Marcus Oyelaran's team builds it. Wen Li sets the miss penalty and the recovery rate. Sofia Marino owns the card line and the phone copy. Nadia Hoffmann answers the 45 open callout tickets. Ravi Menon tracks pings per week for the four, plus acceptance rate split by turned down vs missed.
+**Owner: the Dispatch PM (me).** I'm accountable for the fix end to end: scope, launch, and the four-week review with Helen.
+
+Who does what: Marcus Oyelaran's team builds it. Wen Li sets the miss penalty and the recovery rate. Sofia Marino owns the card line and the phone copy. Nadia Hoffmann answers the 45 open callout tickets. Ravi Menon tracks pings per week for the four, plus acceptance rate split by turned down vs missed.
 
 Still open:
 - Are the misses slow answers or late notifications?
@@ -92,6 +103,16 @@ Still open:
 - Routing changes normally ship with the release, so does this ride the next train or go as an exception?
 
 ## Next steps
-1. 30 minutes with Wen and Marcus to agree the miss penalty and recovery rate.
-2. A click-through of Kip's card and Mite's phone for you to try.
-3. Then the code change.
+The clickable prototype is ready now: `prototype.html` covers all four responders, and `before-after.html` shows today and the fix side by side.
+
+1. **This week:** 30 minutes with Wen and Marcus to agree the miss penalty and a lift-only recovery rate, and to get Wen's answer to Marcus's 14 Aug question.
+2. **Before build:** Wen pulls the four's real production scores for the catch-up. Marcus's team checks ping delivery times against ping-sent times, to see whether some misses are late notifications.
+3. **Helen decides:** a release exception, or the next train.
+4. **Build (Marcus's team):**
+   - score a miss as its own outcome, with recovery that only lifts;
+   - add the line on the coverage card and the two-day no-ping alert;
+   - add the phone messages;
+   - run the one-time catch-up for the four.
+
+   Sofia tests the wording with Kip and one responder. Nadia briefs support and answers the 45 tickets.
+5. **Four weeks after launch:** review against "How we'll know it worked", then decide the ping wait.
