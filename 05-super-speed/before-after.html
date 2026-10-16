@@ -44,10 +44,11 @@
 <body>
 <header>
   <div>
-    <h1>Meteor Mite, before and after the fix</h1>
-    <div class="sub">Same week, same pings. Left is what Kip and Meteor Mite get today; right is what they'd get with the fix.</div>
+    <h1 id="title">Meteor Mite, before and after the fix</h1>
+    <div class="sub">Same week, same pings. Left is what the handler and responder get today; right is what they'd get with the fix.</div>
   </div>
-  <div class="seg" role="group" aria-label="Week" id="weeks"></div>
+  <div class="seg" role="group" aria-label="Responder" id="who"></div>
+  <div class="seg" role="group" aria-label="Week" id="weeks" style="margin-left:0"></div>
 </header>
 
 <div class="story" aria-live="polite">
@@ -67,7 +68,7 @@
 </div>
 
 <p class="note">
-  Both sides use Meteor Mite's and The Gale's real ping records (27 Jul – 5 Sep). Pick a week above and both sides move together.
+  Both sides use the responder's real ping records (27 Jul – 6 Sep). Pick a week above and both sides move together.
   Each side is fully clickable: open her recent pings, or send her a callout and take it, turn it down or let it run out.
   The ping counts on the right are still what actually happened. With the fix, her drop would have been much smaller.
   Keep this page in the same folder as prototype.html.
@@ -78,37 +79,32 @@
     { label: "27 Jul" }, { label: "3 Aug" }, { label: "10 Aug", ship: true },
     { label: "17 Aug" }, { label: "24 Aug" }, { label: "31 Aug" },
   ];
-  const STORY = [
-    ["A normal week. Meteor Mite and The Gale split Eastgate between them, and the two sides look the same.",
-     "Meteor Mite: 12 pings, 1 missed. She was offered first on 7 of 21 Eastgate callouts."],
-    ["Still normal. Meteor Mite takes 8 of her 11 pings. Nothing differs between the sides yet.",
-     "No misses all week. Ping wait is 90 seconds."],
-    ["4.2 ships on Wednesday 12 Aug and the ping wait drops to 60 seconds. On 13–14 Aug, Meteor Mite misses three pings in a row. This is where the sides split.",
-     "Before: each miss is scored like a turn-down and she never hears about it. After: each miss shows on her phone, and Kip's card flags it."],
-    ["Meteor Mite drops from about 11 pings a week to 4. Eastgate work starts going to The Gale first.",
-     "She was offered first on 2 of 15 Eastgate callouts. The Gale took 12."],
-    ["Two pings all week, and she takes neither. Before, Kip's two cards tell 'wildly different stories' with no reason given.",
-     "Offered first on 1 of 16 Eastgate callouts. The Gale took 14."],
-    ["The week Kip talked to Sofia (4 Sep). Before, Kip tells her to hang in there. After, Kip can tell her what happened and that it's been fixed.",
-     "One ping all week, on Saturday, and it was missed. The Gale took 16 of 17 Eastgate callouts."],
-  ];
-  let week = 5;
+  const WHO = [["mite", "Meteor Mite"], ["farlight", "Farlight"], ["undertow", "The Undertow"], ["vesper", "Vesper"]];
+  let week = 5, who = "mite";
   const frames = [document.getElementById("before"), document.getElementById("after")];
 
+  function send(msg) { frames.forEach(f => f.contentWindow && f.contentWindow.postMessage(msg, "*")); }
+
   function render() {
+    const ws = document.getElementById("who");
+    ws.innerHTML = WHO.map(([k, n]) => `<button data-who="${k}" aria-pressed="${k === who}">${n}</button>`).join("");
+    ws.querySelectorAll("button").forEach(b => b.onclick = () => { who = b.dataset.who; send({ who, week }); render(); });
+    document.getElementById("title").textContent = WHO.find(w => w[0] === who)[1] + ", before and after the fix";
     const seg = document.getElementById("weeks");
     seg.innerHTML = WEEKS.map((w, i) =>
       `<button data-w="${i}" aria-pressed="${i === week}">${w.label}${w.ship ? '<span class="ship">4.2 ships</span>' : ""}</button>`).join("");
     seg.querySelectorAll("button").forEach(b => b.onclick = () => {
       week = +b.dataset.w;
-      frames.forEach(f => f.contentWindow && f.contentWindow.postMessage({ week }, "*"));
+      send({ week, who });
       render();
     });
-    document.getElementById("storyText").textContent = STORY[week][0];
-    document.getElementById("storyFact").textContent = STORY[week][1];
   }
 
   window.addEventListener("message", e => {
+    if (e.data && e.data.story && e.data.mode === "new") {
+      document.getElementById("storyText").textContent = e.data.story[0];
+      document.getElementById("storyFact").textContent = e.data.story[1];
+    }
     if (!e.data || typeof e.data.height !== "number") return;
     const f = e.data.mode === "old" ? frames[0] : frames[1];
     f.style.height = Math.max(600, e.data.height) + "px";

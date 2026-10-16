@@ -14,7 +14,7 @@ The glossary already says missed is "recorded separately from turned down". The 
 
 ## What changes for them
 
-**1. A missed ping stops counting as a no.** A miss gets recorded and scored as its own outcome, with a much smaller penalty than a turn-down. Scores also ease back toward neutral over a few weeks, which answers Wen's 2019 question with a yes. Someone who had a bad week of thumbs-on-a-gone-screen isn't still paying for it in October.
+**1. A missed ping stops counting as a no.** A miss gets recorded and scored as its own outcome, with a much smaller penalty than a turn-down. Low scores also climb back toward neutral over a few weeks, which answers Wen's 2019 question with a yes. Recovery only ever lifts a low score; it never pulls a good one down (see the replay below). Someone who had a bad week of thumbs-on-a-gone-screen isn't still paying for it in October.
 
 **2. Kip's coverage card says why it's quiet.** When a responder's pings drop well below their usual week, the card shows one plain line in Rook's words:
 > *Meteor Mite — 3 pings this week (usually ~12). 9 of the last 14 were missed, not turned down. Mite is being offered later in the order in their area.*
@@ -29,6 +29,27 @@ Her card also shows her pings day by day, so the quiet days stand out. We recomm
 **4. Mite's phone tells Mite what happened.** After a missed ping, the app says: *"You missed a ping at 23:14. It went to another responder. Missed pings don't count against you the way turning one down does."* If several misses land close together, it adds: *"Several pings missed recently. Check that notifications are on for Rook."* Silence no longer means "something's broken" or "they've dropped me".
 
 **5. One-time catch-up for the four.** At launch, the four affected responders go back to where their scores stood before 12 Aug, so they don't have to earn their way out of a hole we dug.
+
+## What it would have changed
+
+We replayed each of the four responders' routing scores ping by ping, then simulated every callout in their own area from 12 Aug as if the fix had shipped with 4.2. How often a responder gets asked at each score is measured from the real data. Run under 4.2's own rules, the same replay reproduces the real drop. For Meteor Mite it gives 7.6 → 3.8 → 1.6 → 1.4 pings a week, against an actual 8 → 3 → 1 → 0.
+
+Pings in their own area in the week of 31 Aug:
+
+| Responder | Usual before 4.2 | What happened | With the fix (estimate) |
+| --- | --- | --- | --- |
+| Meteor Mite (Eastgate) | ~10 | 0 | 4–9 |
+| Farlight (Uptown) | ~9.5 | 0 | 4–10 |
+| The Undertow (Harborside) | ~10 | 1 | 6–11 |
+| Vesper (Old Town) | ~11.5 | 1 | 8–14 |
+
+The low end assumes they keep missing as often as they did after 4.2 (53–64% of pings). The high end assumes they answer like a typical responder after 4.2 (18% missed). The replay used a miss penalty of 0.03 and recovery of 5% of the gap a day. Those are illustrative values; Wen sets the real ones.
+
+Two things the replay taught us:
+- **Recovery must only lift.** Easing every score toward neutral would also pull healthy scores down, and in the replay that cost pings rather than restoring them.
+- **The fix is necessary but not sufficient.** If the four keep missing 6 pings in 10, the fix roughly halves the drop instead of preventing it. That makes the ping wait and the late-notification question more urgent, not less.
+
+The prototype (`prototype.html`) now covers all four responders and shows this chart under each one. The replay is `replay.py`, in the same folder.
 
 ## What it deliberately doesn't do
 - **Doesn't change the ping wait.** 60 vs 90 seconds is a separate decision, made after this lands and Ravi Menon's numbers show what's left.

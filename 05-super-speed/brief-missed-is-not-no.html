@@ -125,7 +125,7 @@
   <h2>What changes for them</h2>
   <div class="change"><div class="num">1</div><div>
     <h3>A missed ping stops counting as a no.</h3>
-    <p>A miss gets recorded and scored as its own outcome, with a much smaller penalty than a turn-down. Scores also ease back toward neutral over a few weeks, which answers Wen's 2019 question with a yes. Someone who had a bad week of thumbs-on-a-gone-screen isn't still paying for it in October.</p>
+    <p>A miss gets recorded and scored as its own outcome, with a much smaller penalty than a turn-down. Low scores also climb back toward neutral over a few weeks, which answers Wen's 2019 question with a yes. Recovery only ever lifts a low score; it never pulls a good one down (see the replay below). Someone who had a bad week of thumbs-on-a-gone-screen isn't still paying for it in October.</p>
   </div></div>
 
   <div class="change"><div class="num">2</div><div>
@@ -159,6 +159,21 @@
     <h3>One-time catch-up for the four.</h3>
     <p>At launch, the four affected responders go back to where their scores stood before 12 Aug, so they don't have to earn their way out of a hole we dug.</p>
   </div></div>
+
+  <h2>What it would have changed</h2>
+  <p>We replayed each of the four responders' routing scores ping by ping, then simulated every callout in their own area from 12 Aug as if the fix had shipped with 4.2. How often a responder gets asked at each score is measured from the real data. Run under 4.2's own rules, the same replay reproduces the real drop. For Meteor Mite it gives 7.6 → 3.8 → 1.6 → 1.4 pings a week, against an actual 8 → 3 → 1 → 0.</p>
+  <table>
+    <thead><tr><th>Pings in their own area, week of 31 Aug</th><th>Usual before 4.2</th><th>What happened</th><th>With the fix (estimate)</th></tr></thead>
+    <tbody>
+      <tr><td><b>Meteor Mite</b>Eastgate</td><td>~10</td><td>0</td><td>4–9</td></tr>
+      <tr><td><b>Farlight</b>Uptown</td><td>~9.5</td><td>0</td><td>4–10</td></tr>
+      <tr><td><b>The Undertow</b>Harborside</td><td>~10</td><td>1</td><td>6–11</td></tr>
+      <tr><td><b>Vesper</b>Old Town</td><td>~11.5</td><td>1</td><td>8–14</td></tr>
+    </tbody>
+  </table>
+  <p style="margin-top:10px">The low end assumes they keep missing as often as they did after 4.2 (53–64% of pings). The high end assumes they answer like a typical responder after 4.2 (18% missed). The replay used a miss penalty of 0.03 and recovery of 5% of the gap a day. Those are illustrative values; Wen sets the real ones.</p>
+  <p><b>Recovery must only lift.</b> Easing every score toward neutral would also pull healthy scores down, and in the replay that cost pings rather than restoring them.</p>
+  <p><b>The fix is necessary but not sufficient.</b> If the four keep missing 6 pings in 10, the fix roughly halves the drop instead of preventing it. That makes the ping wait and the late-notification question more urgent, not less.</p>
 
   <h2>What it deliberately doesn't do</h2>
   <ul class="nots">

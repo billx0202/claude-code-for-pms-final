@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Meteor Mite, through Kip's eyes</title>
+<title>Shut-out Responders Prototype</title>
 <style>
   :root {
     --bg: #eef0f3; --panel: #ffffff; --ink: #1c1f24; --muted: #646b76; --line: #dfe2e7;
@@ -200,12 +200,47 @@
     body.embed .cards { grid-template-columns: 1fr; }
     body.embed .phone { width: 290px; }
   }
+
+  /* Estimate panel: what the fix would have changed (prototype annotation, not product UI) */
+  :root { --chart-actual: #8a8f98; }
+  @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --chart-actual: #7d838c; } }
+  :root[data-theme="dark"] { --chart-actual: #7d838c; }
+  .estimate { max-width: 1240px; margin: 0 auto 20px; padding: 0 24px; }
+  .estimate .box { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .estimate h2 { font-size: 17px; margin: 0 0 2px; }
+  .estimate .sub { color: var(--muted); font-size: 13px; margin: 0 0 10px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+  .sw { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .sw.actual { background: var(--chart-actual); }
+  .sw.est { background: color-mix(in srgb, var(--accent) 35%, transparent); border-top: 2px solid var(--accent); border-bottom: 2px solid var(--accent); height: 12px; }
+  .sw.usual { width: 18px; height: 0; border-top: 2px dashed var(--muted); border-radius: 0; vertical-align: 3px; }
+  .chartwrap { position: relative; }
+  #estChart { width: 100%; height: auto; display: block; }
+  #estChart text { fill: var(--muted); font-size: 11px; font-family: inherit; }
+  #estChart .grid { stroke: var(--line); stroke-width: 1; }
+  #estChart .actual { fill: var(--chart-actual); }
+  #estChart .band { fill: color-mix(in srgb, var(--accent) 35%, transparent); }
+  #estChart .bandedge { stroke: var(--accent); stroke-width: 2; }
+  #estChart .usual { stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
+  #estChart .sel { fill: var(--accent-soft); opacity: .55; }
+  #estChart .hit { fill: transparent; cursor: default; }
+  #estChart .vlabel { fill: var(--ink); font-weight: 600; }
+  .tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--panel); font-size: 12px; line-height: 1.4;
+    padding: 7px 9px; border-radius: 6px; max-width: 240px; display: none; z-index: 2; }
+  .tablebtn { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 3px 9px; font-size: 12px; margin-top: 8px; }
+  .esttable { border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  .esttable th, .esttable td { border-bottom: 1px solid var(--line); padding: 5px 10px; text-align: right; }
+  .esttable th:first-child, .esttable td:first-child { text-align: left; }
+  .method { font-size: 12px; color: var(--muted); margin: 10px 0 0; }
+  body.embed .estimate { display: none; }
+  @media (max-width: 900px) { .estimate { padding: 0 16px; } }
 </style>
 </head>
 <body>
 
 <div class="proto" role="region" aria-label="Prototype controls">
   <b>Prototype</b>
+  <div class="seg" role="group" aria-label="Responder" id="who"></div>
   <div class="seg" role="group" aria-label="Which version">
     <button id="modeOld">Today (4.2)</button>
     <button id="modeNew">With the fix</button>
@@ -226,62 +261,47 @@
 </div>
 
 <div class="stage">
-  <section aria-label="Kip's console">
-    <p class="where">Where it happens · Kip's web console, Coverage view</p>
+  <section aria-label="Handler's console">
+    <p class="where" id="whereConsole"></p>
     <div class="console">
       <div class="topbar">
         <span class="logo">Rook Dispatch</span>
         <nav class="nav"><span class="on">Coverage</span><span>Callouts</span><span>Responders</span><span>Reports</span></nav>
-        <span class="who">Signed in as Kip</span>
+        <span class="who" id="signedIn"></span>
       </div>
       <div class="console-body">
         <div class="console-head">
           <div>
-            <h1>Coverage · Eastgate</h1>
+            <h1 id="covTitle"></h1>
             <div class="sub" id="weekSub"></div>
           </div>
-          <button class="send" id="send">Send a callout to Meteor Mite</button>
+          <button class="send" id="send"></button>
         </div>
 
         <div id="alerts"></div>
         <div class="cards">
-          <article class="card" aria-label="Meteor Mite coverage card">
+          <article class="card" id="card1">
             <div class="card-head">
-              <div class="avatar">MM</div>
-              <div><h2>Meteor Mite</h2><div class="area">Eastgate</div></div>
+              <div class="avatar" id="c1Avatar"></div>
+              <div><h2 id="c1Name"></h2><div class="area" id="c1Area"></div></div>
               <span class="status">Available</span>
             </div>
-            <div class="tags"><span>flight</span><span>structural-entry</span><span>crowd-management</span></div>
             <div class="week">
               <div><div class="big" id="miteCount"></div><div class="lbl">pings this week</div></div>
               <div class="bars" id="miteBars" aria-hidden="true"></div>
             </div>
             <div class="split" id="miteSplit"></div>
-            <div class="days" id="miteDays" aria-label="Meteor Mite's pings per day"></div>
+            <div class="days" id="miteDays"></div>
             <div class="daynote" id="dayNote"></div>
             <div id="miteWhy"></div>
           </article>
-
-          <article class="card" aria-label="The Gale coverage card">
-            <div class="card-head">
-              <div class="avatar">TG</div>
-              <div><h2>The Gale</h2><div class="area">Eastgate</div></div>
-              <span class="status">Available</span>
-            </div>
-            <div class="tags"><span>flight</span><span>cold-weather</span><span>de-escalation</span></div>
-            <div class="week">
-              <div><div class="big" id="galeCount"></div><div class="lbl">pings this week</div></div>
-              <div class="bars" id="galeBars" aria-hidden="true"></div>
-            </div>
-            <div class="split" id="galeSplit"></div>
-            <div id="galeWhy"></div>
-          </article>
+          <article class="card" id="card2"></article>
         </div>
 
         <div id="tell"></div>
 
         <div class="drawer" id="drawer" aria-live="polite">
-          <h3>Meteor Mite · recent pings <button id="closeDrawer">Close</button></h3>
+          <h3><span id="drawerTitle"></span> <button id="closeDrawer">Close</button></h3>
           <ul class="pinglist" id="pinglist"></ul>
           <div class="foot" id="drawerFoot"></div>
         </div>
@@ -289,20 +309,20 @@
     </div>
   </section>
 
-  <section aria-label="Meteor Mite's phone">
-    <p class="where">Where it happens · Meteor Mite's phone, Rook app</p>
+  <section aria-label="Responder's phone">
+    <p class="where" id="wherePhone"></p>
     <div class="phone">
       <div class="screen">
         <div class="notch"></div>
         <div class="sb"><span id="clock">—</span><span>●●● ▮</span></div>
         <div class="app">
-          <div class="app-title"><div><h2>Rook</h2><div class="me">Meteor Mite · Eastgate</div></div><span class="avail">Available</span></div>
+          <div class="app-title"><div><h2>Rook</h2><div class="me" id="me"></div></div><span class="avail">Available</span></div>
           <div id="feed"></div>
         </div>
         <div class="incoming" id="incoming" role="dialog" aria-label="Incoming ping">
-          <div class="kicker">Ping · Eastgate</div>
+          <div class="kicker" id="kicker"></div>
           <h3>A man in a suit made of mirrors is on the museum roof</h3>
-          <div class="det">Needs: flight · ~5 min away</div>
+          <div class="det">~5 min away</div>
           <div class="timer">
             <div class="n" id="secs">60</div>
             <div class="t">seconds left (sped up 10× for the demo)</div>
@@ -319,135 +339,148 @@
   </section>
 </div>
 
-<p class="explain">
-  Pings, weeks and Eastgate callouts are Meteor Mite's and The Gale's real records from the pings and callouts tables (27 Jul – 5 Sep).
-  “With the fix” shows what Kip and Meteor Mite would have been told during those same weeks. With the fix, her misses would barely
-  have lowered her place in the order, so the drop itself would have been much smaller. No scores, ranks or other handlers' responders are named anywhere.
-</p>
+<section class="estimate" aria-label="What the fix would have changed">
+  <div class="box">
+    <h2 id="estTitle"></h2>
+    <p class="sub" id="estSub"></p>
+    <div class="legend">
+      <span><i class="sw actual"></i>What actually happened</span>
+      <span><i class="sw est"></i>Estimate with the fix (range)</span>
+      <span><i class="sw usual"></i>Usual week before 4.2 (<span id="usualVal"></span>)</span>
+    </div>
+    <div class="chartwrap">
+      <svg id="estChart" viewBox="0 0 640 230" role="img" aria-labelledby="estTitle"></svg>
+      <div class="tip" id="estTip"></div>
+    </div>
+    <button class="tablebtn" id="estTableBtn">Show as table</button>
+    <table class="esttable" id="estTable" hidden></table>
+    <p class="method" id="estMethod"></p>
+  </div>
+</section>
+
+<p class="explain" id="explain"></p>
 
 <script>
-  // Real records, rook-database (pings, callouts). Week = Monday start.
+  // ---- Real records from rook-database (pings, callouts, support_tickets). Weeks start Monday. ----
   const WEEKS = [
-    { key: "2026-07-27", label: "27 Jul", mite: [9, 2, 1], gale: [11, 1, 1], east: 21, miteFirst: 7, galeTook: 11 },
-    { key: "2026-08-03", label: "3 Aug",  mite: [8, 3, 0], gale: [10, 3, 0], east: 19, miteFirst: 5, galeTook: 10 },
-    { key: "2026-08-10", label: "10 Aug", mite: [4, 2, 4], gale: [9, 3, 3],  east: 15, miteFirst: 6, galeTook: 9, ship: true },
-    { key: "2026-08-17", label: "17 Aug", mite: [1, 1, 2], gale: [12, 3, 2], east: 15, miteFirst: 2, galeTook: 12 },
-    { key: "2026-08-24", label: "24 Aug", mite: [0, 1, 1], gale: [14, 4, 2], east: 16, miteFirst: 1, galeTook: 14 },
-    { key: "2026-08-31", label: "31 Aug", mite: [0, 0, 1], gale: [16, 3, 2], east: 17, miteFirst: 0, galeTook: 16 },
+    { key: "2026-07-27", label: "27 Jul" }, { key: "2026-08-03", label: "3 Aug" },
+    { key: "2026-08-10", label: "10 Aug", ship: true }, { key: "2026-08-17", label: "17 Aug" },
+    { key: "2026-08-24", label: "24 Aug" }, { key: "2026-08-31", label: "31 Aug" },
   ];
-  // [sent_at local, outcome, callout area, who took it]
-  const MITE_PINGS = [
-    ["2026-08-03 19:34", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-04 20:34", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-05 13:47", "turned down", "Eastgate", "The Gale"],
-    ["2026-08-05 14:53", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-06 01:14", "turned down", "Foundry Row", "other"],
-    ["2026-08-06 01:21", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-06 05:02", "turned down", "Midtown", "other"],
-    ["2026-08-06 16:20", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-08 07:54", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-08 16:55", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-08 20:43", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-10 14:03", "turned down", "Eastgate", "The Gale"],
-    ["2026-08-10 21:15", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-11 06:41", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-12 19:04", "turned down", "Midtown", "other"],
-    ["2026-08-13 13:43", "missed", "Midtown", "other"],
-    ["2026-08-13 15:12", "missed", "Eastgate", "The Gale"],
-    ["2026-08-14 07:26", "missed", "Eastgate", "The Gale"],
-    ["2026-08-15 15:18", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-15 19:40", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-16 11:16", "missed", "Eastgate", "nobody"],
-    ["2026-08-18 07:37", "turned down", "Eastgate", "The Gale"],
-    ["2026-08-19 17:30", "taken", "Eastgate", "Meteor Mite"],
-    ["2026-08-20 16:41", "missed", "Eastgate", "nobody"],
-    ["2026-08-22 20:53", "missed", "Midtown", "other"],
-    ["2026-08-27 20:03", "turned down", "Midtown", "nobody"],
-    ["2026-08-29 09:15", "missed", "Eastgate", "The Gale"],
-    ["2026-09-05 15:06", "missed", "Midtown", "other"],
-  ].map(([at, outcome, area, by]) => ({ at, outcome, area, by }));
-
-  const MITE_USUAL = 11, GALE_USUAL = 13;
-  // Per day, 27 Jul – 6 Sep: [Meteor Mite's pings, Eastgate callouts, of which The Gale took]
-  const DAILY = [
-    [3,4,1],[3,5,3],[0,1,1],[3,2,0],[0,3,3],[1,2,1],[2,4,2],
-    [1,4,2],[1,3,2],[2,2,1],[4,2,0],[0,0,0],[3,3,0],[0,5,5],
-    [2,2,1],[1,4,2],[1,0,0],[2,1,1],[1,3,3],[2,2,0],[1,3,2],
-    [0,4,4],[1,2,2],[1,1,0],[1,2,0],[0,2,2],[1,2,2],[0,2,2],
-    [0,2,1],[0,3,2],[0,2,2],[1,0,0],[0,4,4],[1,1,1],[0,4,4],
-    [0,1,0],[0,3,3],[0,1,1],[0,2,2],[0,5,5],[1,5,5],[0,0,0],
-  ].map(([mite, east, gale], k) => ({ date: new Date(Date.UTC(2026, 6, 27 + k)), mite, east, gale }));
-  const dayLabel = d => `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
-  // A quiet day: no pings for Meteor Mite while Eastgate had callouts she could have been offered.
-  const quiet = k => k >= 0 && DAILY[k].mite === 0 && DAILY[k].east > 0;
-  const alertsOn = k => state.rule === 1 ? quiet(k) : quiet(k) && quiet(k - 1);
+  const RESP = {
+    mite: {
+      name: "Meteor Mite", initials: "MM", area: "Eastgate", handler: "Kip", she: true, usual: 11, preHome: 9.8,
+      weeks: [[9,2,1],[8,3,0],[4,2,4],[1,1,2],[0,1,1],[0,0,1]],
+      areaN: [21,19,15,15,16,17], first: [7,5,6,2,1,0], othersTook: [11,10,9,12,14,16],
+      homeActual: [11,9,8,3,1,0], est: { low: [7.7,7.1,5.6,4.2], high: [7.7,7.9,8.3,8.8], m42: [7.6,3.8,1.6,1.4] }, ownMiss: 57,
+      daily: "3:4,3:5,0:1,3:2,0:3,1:2,2:4,1:4,1:3,2:2,4:2,0:0,3:3,0:5,2:2,1:4,1:0,2:1,1:3,2:2,1:3,0:4,1:2,1:1,1:2,0:2,1:2,0:2,0:2,0:3,0:2,1:0,0:4,1:1,0:4,0:1,0:3,0:1,0:2,0:5,1:5,0:0",
+      pings: "2026-07-20 16:25|taken|Eastgate|self;2026-07-20 18:21|taken|Eastgate|self;2026-07-23 09:48|missed|Eastgate|The Gale;2026-07-23 10:42|turned down|Eastgate|The Gale;2026-07-23 19:32|taken|Eastgate|self;2026-07-23 21:19|taken|Eastgate|self;2026-07-24 12:33|taken|Eastgate|self;2026-07-24 17:16|turned down|Eastgate|nobody;2026-07-24 19:13|turned down|Eastgate|The Gale;2026-07-25 09:08|taken|Eastgate|self;2026-07-25 10:36|taken|Eastgate|self;2026-07-27 00:47|taken|Eastgate|self;2026-07-27 16:10|taken|Eastgate|self;2026-07-27 18:13|taken|Eastgate|self;2026-07-28 19:06|taken|Eastgate|self;2026-07-28 19:46|missed|Eastgate|The Gale;2026-07-28 22:30|taken|Eastgate|self;2026-07-30 17:10|taken|Eastgate|self;2026-07-30 18:51|turned down|Foundry Row|other;2026-07-30 21:25|taken|Eastgate|self;2026-08-01 10:14|taken|Eastgate|self;2026-08-02 15:46|taken|Eastgate|self;2026-08-02 19:12|turned down|Eastgate|The Gale;2026-08-03 19:34|taken|Eastgate|self;2026-08-04 20:34|taken|Eastgate|self;2026-08-05 13:47|turned down|Eastgate|The Gale;2026-08-05 14:53|taken|Eastgate|self;2026-08-06 01:14|turned down|Foundry Row|other;2026-08-06 01:21|taken|Eastgate|self;2026-08-06 05:02|turned down|Midtown|other;2026-08-06 16:20|taken|Eastgate|self;2026-08-08 07:54|taken|Eastgate|self;2026-08-08 16:55|taken|Eastgate|self;2026-08-08 20:43|taken|Eastgate|self;2026-08-10 14:03|turned down|Eastgate|The Gale;2026-08-10 21:15|taken|Eastgate|self;2026-08-11 06:41|taken|Eastgate|self;2026-08-12 19:04|turned down|Midtown|other;2026-08-13 13:43|missed|Midtown|other;2026-08-13 15:12|missed|Eastgate|The Gale;2026-08-14 07:26|missed|Eastgate|The Gale;2026-08-15 15:18|taken|Eastgate|self;2026-08-15 19:40|taken|Eastgate|self;2026-08-16 11:16|missed|Eastgate|nobody;2026-08-18 07:37|turned down|Eastgate|The Gale;2026-08-19 17:30|taken|Eastgate|self;2026-08-20 16:41|missed|Eastgate|nobody;2026-08-22 20:53|missed|Midtown|other;2026-08-27 20:03|turned down|Midtown|nobody;2026-08-29 09:15|missed|Eastgate|The Gale;2026-09-05 15:06|missed|Midtown|other",
+      said: `<q>Hang in there, it'll pick up.</q> Kip, 4 Sep: “I don't have anything better than that.”`,
+      partner: { name: "The Gale", initials: "TG", usual: 13, weeks: [[11,1,1],[10,3,0],[9,3,3],[12,3,2],[14,4,2],[16,3,2]] },
+      story: [
+        ["A normal week. Meteor Mite and The Gale split Eastgate between them, and Kip's two cards look alike.", "Meteor Mite: 12 pings, 1 missed. She was offered first on 7 of 21 Eastgate callouts."],
+        ["Still normal. Meteor Mite takes 8 of her 11 pings.", "No misses all week. Ping wait is 90 seconds."],
+        ["4.2 ships on Wednesday 12 Aug. The ping wait drops to 60 seconds. On 13–14 Aug, Meteor Mite misses three pings in a row.", "Each miss is scored exactly like a turn-down, and her score doesn't recover by itself."],
+        ["Meteor Mite drops from about 11 pings a week to 4. Eastgate work starts going to The Gale first.", "She was offered first on 2 of 15 Eastgate callouts. The Gale took 12."],
+        ["Two pings all week, and she takes neither. Kip's cards now 'tell wildly different stories'.", "Offered first on 1 of 16 Eastgate callouts. The Gale took 14."],
+        ["The week Kip talked to Sofia (4 Sep). Meteor Mite is texting Kip to ask if something's broken. Kip tells her to hang in there.", "One ping all week, on Saturday, and it was missed. The Gale took 16 of 17 Eastgate callouts."],
+      ],
+    },
+    farlight: {
+      name: "Farlight", initials: "FL", area: "Uptown", handler: "Linda Pruitt", usual: 12, preHome: 9.5,
+      weeks: [[10,3,0],[8,3,1],[4,2,4],[0,1,2],[0,0,1],[0,0,0]],
+      areaN: [11,8,6,7,10,10], first: [8,6,5,1,0,0], othersTook: [0,0,2,6,10,10],
+      homeActual: [11,8,6,2,0,0], est: { low: [6.0,5.7,5.7,3.7], high: [6.0,6.9,9.7,9.7], m42: [5.4,2.7,1.7,1.5] }, ownMiss: 64,
+      daily: "2:2,1:0,1:1,1:1,1:1,3:3,4:3,1:0,1:1,4:4,1:1,2:1,3:1,0:0,3:2,0:0,3:1,2:1,2:2,0:0,0:0,0:2,0:1,1:2,0:1,0:0,1:1,1:0,0:2,0:2,0:0,0:1,1:0,0:1,0:4,0:4,0:0,0:0,0:3,0:2,0:0,0:1",
+      pings: "2026-07-20 10:34|taken|Uptown|self;2026-07-20 11:31|taken|Uptown|self;2026-07-21 07:44|taken|Uptown|self;2026-07-21 10:50|taken|Uptown|self;2026-07-22 17:27|missed|Kingsbridge|other;2026-07-22 18:48|taken|Uptown|self;2026-07-23 21:52|taken|Uptown|self;2026-07-23 23:30|turned down|Foundry Row|other;2026-07-24 04:51|taken|Uptown|self;2026-07-24 13:31|turned down|Uptown|nobody;2026-07-24 19:37|taken|Uptown|self;2026-07-25 00:04|taken|Uptown|self;2026-07-27 12:33|taken|Uptown|self;2026-07-27 13:19|taken|Uptown|self;2026-07-28 22:54|turned down|Mill District|other;2026-07-29 17:27|taken|Uptown|self;2026-07-30 21:50|taken|Uptown|self;2026-07-31 08:00|taken|Uptown|self;2026-08-01 01:08|taken|Uptown|self;2026-08-01 15:48|taken|Uptown|self;2026-08-01 23:30|turned down|Uptown|nobody;2026-08-02 09:18|taken|Uptown|self;2026-08-02 11:00|turned down|Kingsbridge|other;2026-08-02 18:44|taken|Uptown|self;2026-08-02 20:54|taken|Uptown|self;2026-08-03 15:44|turned down|Foundry Row|other;2026-08-04 20:01|taken|Uptown|self;2026-08-05 05:29|taken|Uptown|self;2026-08-05 09:45|taken|Uptown|self;2026-08-05 16:26|taken|Uptown|self;2026-08-05 19:45|taken|Uptown|self;2026-08-06 12:20|taken|Uptown|self;2026-08-07 12:35|turned down|Kingsbridge|other;2026-08-07 18:42|taken|Uptown|self;2026-08-08 00:21|missed|Kingsbridge|other;2026-08-08 10:39|taken|Uptown|self;2026-08-08 20:19|turned down|Mill District|other;2026-08-10 15:38|taken|Uptown|self;2026-08-10 17:34|taken|Uptown|self;2026-08-10 21:08|turned down|Kingsbridge|other;2026-08-12 16:36|taken|Uptown|self;2026-08-12 19:51|missed|Mill District|other;2026-08-12 20:02|turned down|Kingsbridge|other;2026-08-13 09:45|missed|Uptown|other;2026-08-13 14:51|missed|Kingsbridge|other;2026-08-14 16:32|missed|Uptown|other;2026-08-14 21:22|taken|Uptown|self;2026-08-19 13:28|missed|Uptown|nobody;2026-08-22 11:13|turned down|Uptown|other;2026-08-23 13:51|missed|Mill District|other;2026-08-28 19:28|missed|Mill District|other",
+      said: `Linda Pruitt has filed 16 tickets about Farlight since 14 Aug, saying the phone has gone quiet. All are still open, and nobody has explained why.`,
+    },
+    undertow: {
+      name: "The Undertow", initials: "TU", area: "Harborside", handler: "Desmond Okafor", usual: 12, preHome: 10.2,
+      weeks: [[10,2,0],[9,3,0],[4,2,5],[1,1,2],[0,0,1],[0,0,1]],
+      areaN: [10,10,6,7,10,11], first: [7,9,4,3,1,1], othersTook: [0,0,0,6,10,11],
+      homeActual: [10,10,6,3,1,1], est: { low: [6.0,6.3,7.0,5.5], high: [6.0,6.9,9.7,10.6], m42: [5.8,3.3,1.8,1.7] }, ownMiss: 64,
+      daily: "2:2,2:2,3:3,0:0,2:1,3:2,0:0,0:0,2:2,3:2,1:1,5:4,1:1,0:0,2:2,1:0,1:0,4:4,2:0,0:0,1:0,2:1,1:2,0:0,0:1,1:1,0:0,0:2,0:2,0:1,0:1,1:1,0:3,0:0,0:2,0:1,0:1,0:2,0:2,0:1,1:4,0:0",
+      pings: "2026-07-20 01:36|turned down|Harborside|nobody;2026-07-20 06:57|turned down|Harborside|nobody;2026-07-20 16:20|taken|Harborside|self;2026-07-20 18:02|taken|Harborside|self;2026-07-20 18:09|taken|Harborside|self;2026-07-22 18:23|taken|Harborside|self;2026-07-22 22:35|taken|Harborside|self;2026-07-23 15:28|taken|Harborside|self;2026-07-23 19:02|taken|Harborside|self;2026-07-25 12:16|taken|Harborside|self;2026-07-26 00:32|taken|Harborside|self;2026-07-26 06:17|turned down|Riverside|other;2026-07-26 19:45|taken|Harborside|self;2026-07-27 08:54|taken|Harborside|self;2026-07-27 11:16|taken|Harborside|self;2026-07-28 09:32|taken|Harborside|self;2026-07-28 17:52|taken|Harborside|self;2026-07-29 04:04|taken|Harborside|self;2026-07-29 06:31|taken|Harborside|self;2026-07-29 16:57|taken|Harborside|self;2026-07-31 18:22|taken|Harborside|self;2026-07-31 20:07|turned down|Southport|other;2026-08-01 08:07|turned down|Southport|other;2026-08-01 14:05|taken|Harborside|self;2026-08-01 18:47|taken|Harborside|self;2026-08-04 10:25|taken|Harborside|self;2026-08-04 12:43|turned down|Harborside|nobody;2026-08-05 17:45|taken|Harborside|self;2026-08-05 18:18|taken|Harborside|self;2026-08-05 20:54|turned down|Southport|other;2026-08-06 00:49|taken|Harborside|self;2026-08-07 04:26|turned down|Southport|other;2026-08-07 10:29|taken|Harborside|self;2026-08-07 19:51|taken|Harborside|self;2026-08-07 22:12|taken|Harborside|self;2026-08-07 23:13|taken|Harborside|self;2026-08-08 13:58|taken|Harborside|self;2026-08-10 18:49|taken|Harborside|self;2026-08-10 19:45|taken|Harborside|self;2026-08-11 18:58|turned down|Southport|other;2026-08-12 09:04|missed|Southport|other;2026-08-13 11:24|missed|Harborside|nobody;2026-08-13 13:28|taken|Harborside|self;2026-08-13 15:55|taken|Harborside|self;2026-08-13 18:44|missed|Harborside|nobody;2026-08-14 02:53|missed|Southport|nobody;2026-08-14 10:22|missed|Riverside|other;2026-08-16 13:46|turned down|Greenway|other;2026-08-17 14:10|turned down|Greenway|other;2026-08-17 19:07|taken|Harborside|self;2026-08-18 16:18|missed|Harborside|other;2026-08-21 16:45|missed|Harborside|other;2026-08-27 23:18|missed|Harborside|other;2026-09-05 15:17|missed|Harborside|other",
+      said: `Desmond Okafor has filed 17 tickets about The Undertow since 15 Aug, saying the phone has gone quiet. All are still open, and nobody has explained why.`,
+    },
+    vesper: {
+      name: "Vesper", initials: "VS", area: "Old Town", handler: "Aunt Dot", usual: 14, preHome: 11.5,
+      weeks: [[11,1,1],[12,2,0],[6,2,4],[1,1,3],[0,1,1],[0,0,1]],
+      areaN: [11,12,7,8,12,14], first: [10,11,3,2,2,1], othersTook: [0,0,0,7,10,14],
+      homeActual: [11,12,7,3,2,1], est: { low: [7.0,7.6,9.2,8.1], high: [7.0,7.9,11.8,13.6], m42: [7.0,4.7,2.8,2.3] }, ownMiss: 53,
+      daily: "2:2,3:3,1:1,4:3,2:2,1:0,0:0,0:0,4:4,2:2,4:3,3:2,1:1,0:0,2:2,1:1,0:0,1:0,2:1,3:2,3:1,1:1,0:1,1:1,0:0,0:1,0:3,3:1,1:4,0:0,1:2,0:2,0:2,0:0,0:2,0:1,1:2,0:1,0:2,0:2,0:3,0:3",
+      pings: "2026-07-20 09:46|turned down|Midtown|other;2026-07-20 10:13|turned down|Hillcrest|other;2026-07-20 21:19|taken|Old Town|self;2026-07-22 01:55|taken|Old Town|self;2026-07-22 11:20|taken|Old Town|self;2026-07-22 11:28|taken|Old Town|self;2026-07-22 16:56|taken|Old Town|self;2026-07-22 18:22|taken|Old Town|self;2026-07-23 16:56|taken|Old Town|self;2026-07-24 01:09|taken|Old Town|self;2026-07-25 15:50|taken|Old Town|self;2026-07-25 19:14|turned down|Midtown|other;2026-07-26 01:05|taken|Old Town|self;2026-07-26 23:08|taken|Old Town|self;2026-07-27 08:33|taken|Old Town|self;2026-07-27 20:46|taken|Old Town|self;2026-07-28 07:21|taken|Old Town|self;2026-07-28 11:33|taken|Old Town|self;2026-07-28 14:48|taken|Old Town|self;2026-07-29 03:31|taken|Old Town|self;2026-07-30 02:29|missed|Hillcrest|other;2026-07-30 07:48|taken|Old Town|self;2026-07-30 13:24|taken|Old Town|self;2026-07-30 23:17|taken|Old Town|self;2026-07-31 11:28|taken|Old Town|self;2026-07-31 16:59|taken|Old Town|self;2026-08-01 19:12|turned down|Midtown|other;2026-08-04 06:44|taken|Old Town|self;2026-08-04 15:09|taken|Old Town|self;2026-08-04 15:16|taken|Old Town|self;2026-08-04 18:04|taken|Old Town|self;2026-08-05 16:50|taken|Old Town|self;2026-08-05 20:25|taken|Old Town|self;2026-08-06 05:48|taken|Old Town|self;2026-08-06 09:43|taken|Old Town|self;2026-08-06 12:15|turned down|Midtown|other;2026-08-06 17:48|taken|Old Town|self;2026-08-07 12:57|taken|Old Town|self;2026-08-07 17:07|taken|Old Town|self;2026-08-07 17:55|turned down|Midtown|other;2026-08-08 19:51|taken|Old Town|self;2026-08-10 02:01|taken|Old Town|self;2026-08-10 13:33|turned down|Old Town|nobody;2026-08-11 21:00|taken|Old Town|self;2026-08-13 07:34|missed|Lakeshore|other;2026-08-14 02:53|taken|Old Town|self;2026-08-14 17:10|missed|Hillcrest|other;2026-08-15 13:02|taken|Old Town|self;2026-08-15 15:33|turned down|Midtown|other;2026-08-15 20:58|taken|Old Town|self;2026-08-16 10:46|missed|Hillcrest|other;2026-08-16 14:05|missed|Hillcrest|other;2026-08-16 16:03|taken|Old Town|self;2026-08-17 08:55|taken|Old Town|self;2026-08-19 18:42|missed|Old Town|other;2026-08-23 00:10|missed|Old Town|other;2026-08-23 05:34|turned down|Midtown|other;2026-08-23 20:15|missed|Lakeshore|other;2026-08-24 21:40|turned down|Old Town|nobody;2026-08-26 18:09|missed|Old Town|nobody;2026-09-01 11:42|missed|Old Town|other",
+      said: `Aunt Dot never filed a ticket about Vesper. Nothing on the console said anything was wrong.`,
+    },
+  };
+  const ORDER = ["mite", "farlight", "undertow", "vesper"];
   const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
-  const STORY = {
-    "2026-07-27": ["A normal week. Meteor Mite and The Gale split Eastgate between them, and Kip's two cards look alike.",
-                   "Meteor Mite: 12 pings, 1 missed. She was offered first on 7 of 21 Eastgate callouts."],
-    "2026-08-03": ["Still normal. Meteor Mite takes 8 of her 11 pings.",
-                   "No misses all week. Ping wait is 90 seconds."],
-    "2026-08-10": ["4.2 ships on Wednesday 12 Aug. The ping wait drops to 60 seconds. On 13–14 Aug, Meteor Mite misses three pings in a row.",
-                   "Each miss is scored exactly like a turn-down, and her score doesn't recover by itself."],
-    "2026-08-17": ["Meteor Mite drops from about 11 pings a week to 4. Eastgate work starts going to The Gale first.",
-                   "She was offered first on 2 of 15 Eastgate callouts. The Gale took 12."],
-    "2026-08-24": ["Two pings all week, and she takes neither. Kip's cards now 'tell wildly different stories'.",
-                   "Offered first on 1 of 16 Eastgate callouts. The Gale took 14."],
-    "2026-08-31": ["The week Kip talked to Sofia (4 Sep). Meteor Mite is texting Kip to ask if something's broken. Kip tells her to hang in there.",
-                   "One ping all week, on Saturday, and it was missed. The Gale took 16 of 17 Eastgate callouts."],
-  };
-
-  let state;
-  function fresh(prev) {
-    return { mode: prev ? prev.mode : "new", week: prev ? prev.week : 5, live: [], rule: prev ? prev.rule : 2, day: null,
-             drawerOpen: false, timer: null, flashLive: false };
+  for (const k of ORDER) {
+    const r = RESP[k];
+    r.pingList = r.pings.split(";").map(s => { const [at, outcome, area, by] = s.split("|"); return { at, outcome, area, by }; });
+    r.dailyList = r.daily.split(",").map((s, j) => { const [p, c] = s.split(":").map(Number);
+      return { date: new Date(Date.UTC(2026, 6, 27 + j)), pings: p, callouts: c }; });
   }
-  state = fresh();
-  // before-after.html loads this page twice: ?embed=1&mode=old and ?embed=1&mode=new
+
+  // Wording helpers. Only Meteor Mite's pronouns are known (she/her); everyone else is named.
+  const subj = r => r.she ? "She" : r.name;
+  const poss = r => r.she ? "her" : `${r.name}'s`;
+  const plural = (n, w) => `${n} ${w}${n === 1 ? "" : "s"}`;
+
+  function storyFor(r, i) {
+    if (r.story) return r.story[i];
+    const [t, d, m] = r.weeks[i], tot = t + d + m;
+    if (i < 2) return [`${i ? "Still normal" : "A normal week"}. ${r.name} takes ${t} of ${plural(tot, "ping")} and is asked first on ${r.first[i]} of ${r.areaN[i]} ${r.area} callouts.`,
+                       `${plural(m, "missed ping")}. Ping wait is 90 seconds.`];
+    if (i === 2) return [`4.2 ships on Wednesday 12 Aug and the ping wait drops to 60 seconds. ${r.name} misses ${plural(m, "ping")} this week.`,
+                         `Each miss is scored exactly like a turn-down, and the score doesn't recover by itself.`];
+    const lead = tot === 0 ? `No pings at all for ${r.name} this week (usually ~${r.usual}).` : `${r.name} drops to ${plural(tot, "ping")} this week (usually ~${r.usual}).`;
+    return [lead, `Asked first on ${r.first[i]} of ${r.areaN[i]} ${r.area} callouts. Responders from other areas took ${r.othersTook[i]}.`];
+  }
+
+  // ---- State ----
   const params = new URLSearchParams(location.search);
   const EMBED = params.get("embed") === "1";
+  function fresh(prev) {
+    return { who: prev ? prev.who : "mite", mode: prev ? prev.mode : "new", week: prev ? prev.week : 5, rule: prev ? prev.rule : 2,
+             live: [], day: null, drawerOpen: false, timer: null, flashLive: false, table: prev ? prev.table : false };
+  }
+  let state = fresh();
   if (params.get("mode") === "old" || params.get("mode") === "new") state.mode = params.get("mode");
   if (params.get("week") !== null && WEEKS[+params.get("week")]) state.week = +params.get("week");
-  if (EMBED) {
-    document.body.classList.add("embed");
-    window.addEventListener("message", e => {
-      if (e.data && typeof e.data.week === "number" && WEEKS[e.data.week]) { state.week = e.data.week; state.day = null; render(); }
-    });
-    new ResizeObserver(() => parent.postMessage({ height: document.documentElement.scrollHeight, mode: state.mode }, "*"))
-      .observe(document.body);
-  }
+  if (RESP[params.get("who")]) state.who = params.get("who");
   const $ = id => document.getElementById(id);
+  const R = () => RESP[state.who];
 
   const weekEnd = i => i + 1 < WEEKS.length ? WEEKS[i + 1].key : "2026-09-07";
   const inWeek = (p, i) => p.at >= WEEKS[i].key && p.at < weekEnd(i);
-  const seen = i => MITE_PINGS.filter(p => p.at < weekEnd(i)).concat(state.live.filter(p => p.week <= i));
+  const live = () => state.live.filter(p => p.who === state.who);
+  const seen = i => R().pingList.filter(p => p.at < weekEnd(i)).concat(live().filter(p => p.week <= i));
 
   function fmt(at) {
     if (at === "now") return "Just now";
     const d = new Date(at.replace(" ", "T") + ":00Z");
     return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} · ${at.slice(11)}`;
   }
+  const dayLabel = d => `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]}`;
 
   function weekNums(i) {
-    const w = WEEKS[i];
-    const live = state.live.filter(p => p.week === i);
-    const add = o => live.filter(p => p.outcome === o).length;
-    const m = [w.mite[0] + add("taken"), w.mite[1] + add("turned down"), w.mite[2] + add("missed")];
-    return { mite: m, miteTotal: m[0] + m[1] + m[2], gale: w.gale, galeTotal: w.gale.reduce((a, b) => a + b, 0) };
+    const r = R(), w = r.weeks[i], lv = live().filter(p => p.week === i);
+    const add = o => lv.filter(p => p.outcome === o).length;
+    const m = [w[0] + add("taken"), w[1] + add("turned down"), w[2] + add("missed")];
+    return { mite: m, miteTotal: m[0] + m[1] + m[2] };
   }
 
-  function bars(el, totals) {
+  function bars(el, totals, max) {
     el.innerHTML = totals.map((v, i) => {
       const cls = i === state.week ? "now" : i > state.week ? "future" : "";
-      return `<i class="${cls}" style="height:${Math.max(3, v / 22 * 40)}px" title="Week of ${WEEKS[i].label}: ${v} pings"></i>`;
+      return `<i class="${cls}" style="height:${Math.max(3, v / max * 40)}px" title="Week of ${WEEKS[i].label}: ${v}"></i>`;
     }).join("");
   }
-
-  function splitHtml(a) {
-    return `<span><i class="dot d-taken"></i>${a[0]} taken</span><span><i class="dot d-down"></i>${a[1]} turned down</span><span><i class="dot d-missed"></i>${a[2]} missed</span>`;
-  }
+  const splitHtml = a => `<span><i class="dot d-taken"></i>${a[0]} taken</span><span><i class="dot d-down"></i>${a[1]} turned down</span><span><i class="dot d-missed"></i>${a[2]} missed</span>`;
 
   function last14(i) {
     const list = seen(i).slice(-14);
@@ -456,71 +489,141 @@
     return { list, c };
   }
 
+  // ---- Console ----
+  function renderFrame() {
+    const r = R();
+    $("whereConsole").textContent = `Where it happens · ${r.handler}'s web console, Coverage view`;
+    $("wherePhone").textContent = `Where it happens · ${r.name}'s phone, Rook app`;
+    $("signedIn").textContent = `Signed in as ${r.handler}`;
+    $("covTitle").textContent = `Coverage · ${r.area}`;
+    $("send").textContent = `Send a callout to ${r.name}`;
+    $("c1Avatar").textContent = r.initials;
+    $("c1Name").textContent = r.name;
+    $("c1Area").textContent = r.area;
+    $("card1").setAttribute("aria-label", `${r.name} coverage card`);
+    $("miteDays").setAttribute("aria-label", `${r.name}'s pings per day`);
+    $("drawerTitle").textContent = `${r.name} · recent pings`;
+    $("me").textContent = `${r.name} · ${r.area}`;
+    $("kicker").textContent = `Ping · ${r.area}`;
+    $("explain").textContent = `Pings, callouts, tickets and weeks are ${r.name}'s real records from rook-database (27 Jul – 6 Sep). ` +
+      `“With the fix” shows what ${r.handler} and ${r.name} would have been told in those same weeks; the counts on the cards are still what actually happened. ` +
+      `The chart above estimates what would have happened. No scores or ranks are shown, and responders outside ${r.handler}'s roster are never named.`;
+  }
+
   function renderCards() {
-    const i = state.week, w = WEEKS[i], n = weekNums(i), fixed = state.mode === "new";
-    const miteTotals = WEEKS.map((_, k) => weekNums(k).miteTotal);
-    const galeTotals = WEEKS.map((_, k) => weekNums(k).galeTotal);
-
-    $("weekSub").textContent = `Week of ${w.label} · ${w.east} Eastgate callouts` + (w.ship ? " · 4.2 shipped Wed 12 Aug" : "");
+    const r = R(), i = state.week, n = weekNums(i), fixed = state.mode === "new";
+    $("weekSub").textContent = `Week of ${WEEKS[i].label} · ${r.areaN[i]} ${r.area} callouts` + (WEEKS[i].ship ? " · 4.2 shipped Wed 12 Aug" : "");
     $("miteCount").textContent = n.miteTotal;
-    $("galeCount").textContent = n.galeTotal;
-    bars($("miteBars"), miteTotals);
-    bars($("galeBars"), galeTotals);
+    bars($("miteBars"), WEEKS.map((_, k) => weekNums(k).miteTotal), 22);
     $("miteSplit").innerHTML = splitHtml(n.mite);
-    $("galeSplit").innerHTML = splitHtml(n.gale);
 
-    const { c } = last14(i);
-    const sinceMissed = seen(i).filter(p => p.outcome === "missed" && p.at >= "2026-08-12").length;
-    const quiet = n.miteTotal <= MITE_USUAL * 0.6;
-    const missy = n.mite[2] >= 2;
-
+    const { c, list } = last14(i);
+    const quiet = n.miteTotal <= r.usual * 0.6, missy = n.mite[2] >= 2;
     if (!fixed) {
-      $("miteWhy").innerHTML = `<div class="nothing">No explanation on the card. Kip just sees a low number.</div>`;
-      $("galeWhy").innerHTML = `<div class="nothing">No explanation on the card.</div>`;
+      $("miteWhy").innerHTML = `<div class="nothing">No explanation on the card. ${r.handler} just sees a low number.</div>`;
     } else if (quiet) {
-      $("miteWhy").innerHTML = `<div class="why"><b>Meteor Mite is quieter than usual: ${n.miteTotal} ping${n.miteTotal === 1 ? "" : "s"} this week (usually ~${MITE_USUAL}).</b>
-        ${c.missed} of her last ${Math.min(14, seen(i).length)} pings were missed, not turned down. She's being offered later in the order in Eastgate:
-        first on ${w.miteFirst} of ${w.east} callouts this week. Missed pings no longer count like a turn-down, so this should ease.
-        <br><button class="linkbtn" id="openDrawer">See Meteor Mite's recent pings</button></div>`;
+      $("miteWhy").innerHTML = `<div class="why"><b>${r.name} is quieter than usual: ${plural(n.miteTotal, "ping")} this week (usually ~${r.usual}).</b>
+        ${c.missed} of ${poss(r)} last ${list.length} pings were missed, not turned down. ${subj(r)} ${r.she ? "is" : "is"} being offered later in the order in ${r.area}:
+        first on ${r.first[i]} of ${r.areaN[i]} callouts this week. Missed pings no longer count like a turn-down, so this should ease.
+        <br><button class="linkbtn" id="openDrawer">See ${r.name}'s recent pings</button></div>`;
     } else if (missy) {
-      $("miteWhy").innerHTML = `<div class="why"><b>Meteor Mite missed ${n.mite[2]} pings this week.</b>
-        The ping wait is now 60 seconds. Missed pings don't count against her like a turn-down, but if she isn't seeing them, her notifications may be worth a check.
-        <br><button class="linkbtn" id="openDrawer">See Meteor Mite's recent pings</button></div>`;
+      $("miteWhy").innerHTML = `<div class="why"><b>${r.name} missed ${n.mite[2]} pings this week.</b>
+        The ping wait is now 60 seconds. Missed pings don't count against ${r.she ? "her" : r.name} like a turn-down, but notifications may be worth a check.
+        <br><button class="linkbtn" id="openDrawer">See ${r.name}'s recent pings</button></div>`;
     } else {
-      $("miteWhy").innerHTML = `<div class="why calm">Normal week for Meteor Mite. <button class="linkbtn" id="openDrawer">Recent pings</button></div>`;
+      $("miteWhy").innerHTML = `<div class="why calm">Normal week for ${r.name}. <button class="linkbtn" id="openDrawer">Recent pings</button></div>`;
+    }
+    const ob = $("openDrawer");
+    if (ob && fixed) ob.onclick = () => { state.drawerOpen = true; renderDrawer(); $("drawer").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
+    if (!fixed) state.drawerOpen = false;
+
+    // Second card: Kip's other responder, or where this area's callouts went.
+    if (r.partner) {
+      const p = r.partner, w = p.weeks[i], tot = w[0] + w[1] + w[2];
+      const busy = fixed && tot >= p.usual * 1.25;
+      $("card2").setAttribute("aria-label", `${p.name} coverage card`);
+      $("card2").innerHTML = `<div class="card-head"><div class="avatar">${p.initials}</div><div><h2>${p.name}</h2><div class="area">${r.area}</div></div><span class="status">Available</span></div>
+        <div class="week"><div><div class="big">${tot}</div><div class="lbl">pings this week</div></div><div class="bars" id="galeBars" aria-hidden="true"></div></div>
+        <div class="split">${splitHtml(w)}</div>
+        ${!fixed ? `<div class="nothing">No explanation on the card.</div>`
+          : busy ? `<div class="why busy"><b>${p.name} is busier than usual: ${tot} pings (usually ~${p.usual}).</b> Took ${r.othersTook[i]} of ${r.areaN[i]} ${r.area} callouts. Some of these would normally be offered to ${r.name} first.</div>`
+          : `<div class="why calm">Normal week for ${p.name}.</div>`}`;
+      bars($("galeBars"), p.weeks.map(x => x[0] + x[1] + x[2]), 22);
+    } else {
+      const self = R().pingList.filter(p => inWeek(p, i) && p.area === r.area && p.outcome === "taken").length;
+      const others = r.othersTook[i], busy = fixed && others >= 3;
+      $("card2").setAttribute("aria-label", `${r.area} callouts card`);
+      $("card2").innerHTML = `<div class="card-head"><div class="avatar">${r.area.split(" ").map(s => s[0]).join("")}</div><div><h2>${r.area} callouts</h2><div class="area">Where they went this week</div></div></div>
+        <div class="week"><div><div class="big">${r.areaN[i]}</div><div class="lbl">callouts this week</div></div><div class="bars" id="galeBars" aria-hidden="true"></div></div>
+        <div class="split"><span>${r.name} asked first: ${r.first[i]}</span><span>taken by ${r.name}: ${self}</span><span>taken by other areas' responders: ${others}</span></div>
+        ${!fixed ? `<div class="nothing">No explanation on the card.</div>`
+          : busy ? `<div class="why busy"><b>Responders from other areas took ${others} of ${r.areaN[i]} ${r.area} callouts this week.</b> Most of these would normally be offered to ${r.name} first.</div>`
+          : `<div class="why calm">${r.area} callouts are mostly going to ${r.name}, as usual.</div>`}`;
+      bars($("galeBars"), r.othersTook, 16);
     }
 
-    if (fixed) {
-      const busy = n.galeTotal >= GALE_USUAL * 1.25;
-      $("galeWhy").innerHTML = busy
-        ? `<div class="why busy"><b>The Gale is busier than usual: ${n.galeTotal} pings (usually ~${GALE_USUAL}).</b>
-           Took ${w.galeTook} of ${w.east} Eastgate callouts. Some of these would normally be offered to Meteor Mite first.</div>`
-        : `<div class="why calm">Normal week for The Gale.</div>`;
-      const ob = $("openDrawer");
-      if (ob) ob.onclick = () => { state.drawerOpen = true; renderDrawer(); $("drawer").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
-    } else {
-      state.drawerOpen = false;
-    }
-
-    // What Kip can say to Meteor Mite
+    // What the handler can say.
+    const since = seen(i).filter(p => p.outcome === "missed" && p.at >= "2026-08-12");
     if (!fixed) {
-      $("tell").innerHTML = i >= 3
-        ? `<div class="tell today"><small>What Kip actually told Meteor Mite</small><q>Hang in there, it'll pick up.</q> Kip, 4 Sep: “I don't have anything better than that.”</div>`
-        : "";
-    } else if (quiet || missy) {
+      $("tell").innerHTML = i >= 3 ? `<div class="tell today"><small>${r.story ? `What ${r.handler} actually told ${r.name}` : `What ${r.handler} has had to go on`}</small>${r.said}</div>` : "";
+    } else if ((quiet || missy) && since.length) {
+      const first = fmt(since[0].at).split(" · ")[0].split(" ").slice(1).join(" ");
       const msg = quiet
-        ? `You haven't been forgotten. Since 13 Aug you've missed ${sinceMissed} pings, and under 4.2 each one pushed you further down the order in Eastgate. Missed pings don't count like that anymore, and your place has been put back. Please check that Rook notifications are on.`
+        ? `You haven't been forgotten. Since ${first} you've missed ${since.length} pings, and under 4.2 each one pushed you further down the order in ${r.area}. Missed pings don't count like that anymore, and your place has been put back. Please check that Rook notifications are on.`
         : `You missed ${n.mite[2]} pings this week. Pings now wait 60 seconds instead of 90. Missed pings don't count against you like turning one down, but check that Rook notifications are on.`;
-      $("tell").innerHTML = `<div class="tell"><small>What Kip can tell Meteor Mite now</small>${msg}</div>`;
+      $("tell").innerHTML = `<div class="tell"><small>What ${r.handler} can tell ${r.name} now</small>${msg}</div>`;
     } else {
       $("tell").innerHTML = "";
     }
   }
 
+  // ---- No-ping alert ----
+  // A no-ping day breaks only with a ping; days with no callouts at all don't reset the count.
+  // An alert is raised on a day that had callouts but no ping for this responder.
+  const noPing = k => { const d = R().dailyList[k]; return !!d && k >= 0 && d.pings === 0; };
+  const alertsOn = k => { const d = R().dailyList[k];
+    return !!d && d.callouts > 0 && d.pings === 0 && (state.rule === 1 || noPing(k - 1)); };
+
+  function renderAlerts() {
+    const r = R(), i = state.week, fixed = state.mode === "new", first = i * 7;
+    const days = r.dailyList.slice(first, first + 7);
+    $("miteDays").innerHTML = days.map((d, j) => {
+      const k = first + j, on = fixed && alertsOn(k);
+      return `<button class="day ${d.pings === 0 ? "zero" : ""} ${on ? "alert" : ""}" data-k="${k}" aria-pressed="${state.day === k}"
+        title="${dayLabel(d.date)}: ${plural(d.pings, "ping")}"><span class="dn">${DAYS[d.date.getUTCDay()]}</span><span class="dc">${on ? "!" : d.pings}</span></button>`;
+    }).join("");
+    $("miteDays").querySelectorAll(".day").forEach(b => b.onclick = () => { state.day = state.day === +b.dataset.k ? null : +b.dataset.k; renderAlerts(); });
+
+    if (state.day !== null && state.day >= first && state.day < first + 7) {
+      const d = r.dailyList[state.day];
+      $("dayNote").textContent = d.pings
+        ? `${dayLabel(d.date)}: ${plural(d.pings, "ping")} for ${r.name}. ${plural(d.callouts, r.area + " callout")}.`
+        : d.callouts
+          ? `${dayLabel(d.date)}: no pings for ${r.name}, while ${plural(d.callouts, r.area + " callout")} went out.`
+          : `${dayLabel(d.date)}: no pings, but no ${r.area} callouts either, so no alert.`;
+    } else {
+      $("dayNote").textContent = fixed ? "Pings per day. Click a day for detail." : "";
+    }
+
+    if (!fixed) { $("alerts").innerHTML = ""; return; }
+    const hits = days.map((_, j) => first + j).filter(alertsOn);
+    if (!hits.length) { $("alerts").innerHTML = ""; return; }
+    const items = hits.map(k => {
+      const d = r.dailyList[k];
+      if (state.rule === 1) return `<li>${dayLabel(d.date)}: no pings for ${r.name}, while ${plural(d.callouts, r.area + " callout")} went out.</li>`;
+      let s = k; while (noPing(s - 1)) s--;
+      const total = r.dailyList.slice(s, k + 1).reduce((a, x) => a + x.callouts, 0);
+      return `<li>${dayLabel(d.date)}: no pings for ${r.name} for ${k - s + 1} days in a row (since ${dayLabel(r.dailyList[s].date)}), while ${total} ${r.area} callouts went out.</li>`;
+    });
+    const caveat = i < 2 ? `<div class="caveat">This was a normal week: ${r.name} took ${weekNums(i).mite[0]} of ${weekNums(i).miteTotal} pings. One quiet day on its own can just be someone else getting there first.</div>` : "";
+    $("alerts").innerHTML = `<div class="alerts" role="status"><div class="head"><span class="bell">!</span>${r.name}: ${plural(hits.length, "no-ping alert")} this week</div><ul>${items.join("")}</ul>${caveat}</div>`;
+  }
+
+  // ---- Recent pings drawer ----
   function renderDrawer() {
+    const r = R();
     $("drawer").classList.toggle("open", state.drawerOpen && state.mode === "new");
-    const i = state.week;
-    const { list, c } = last14(i);
+    const { list, c } = last14(state.week);
     const cls = { taken: "p-taken", "turned down": "p-down", missed: "p-missed" };
     const where = p => {
       if (p.outcome === "taken") return `Took the callout in ${p.area}`;
@@ -538,32 +641,98 @@
     $("drawerFoot").textContent = `Last ${list.length} pings: ${c.taken} taken · ${c["turned down"]} turned down · ${c.missed} missed.`;
   }
 
+  // ---- Phone ----
   function renderPhone() {
-    const i = state.week, fixed = state.mode === "new";
-    const pings = MITE_PINGS.filter(p => inWeek(p, i)).concat(state.live.filter(p => p.week === i));
-    const items = [];
-    let misses = 0, hidden = 0;
+    const r = R(), i = state.week, fixed = state.mode === "new";
+    const pings = r.pingList.filter(p => inWeek(p, i)).concat(live().filter(p => p.week === i));
+    const items = []; let misses = 0, hidden = 0;
     pings.forEach(p => {
-      const t = p.at === "now" ? "just now" : fmt(p.at);
-      const time = p.at === "now" ? "now" : p.at.slice(11);
-      if (p.outcome === "taken") items.push({ k: "ok", s: `Taken · ${t}`, x: `You took the callout in ${p.area}.`, live: p.at === "now" });
-      else if (p.outcome === "turned down") items.push({ k: "down", s: `Turned down · ${t}`, x: `You turned down a ping. It went to another responder.`, live: p.at === "now" });
+      const t = p.at === "now" ? "just now" : fmt(p.at), time = p.at === "now" ? "now" : p.at.slice(11), isLive = p.at === "now";
+      if (p.outcome === "taken") items.push({ k: "ok", s: `Taken · ${t}`, x: `You took the callout in ${p.area}.`, live: isLive });
+      else if (p.outcome === "turned down") items.push({ k: "down", s: `Turned down · ${t}`, x: `You turned down a ping. It went to another responder.`, live: isLive });
       else if (fixed) {
         misses++;
-        items.push({ k: "missed", s: `Missed ping · ${t}`, x: `You missed a ping at ${time}. It went to another responder. Missed pings don't count against you the way turning one down does.`, live: p.at === "now" });
-        if (misses === 2) items.push({ k: "nudge", s: "From Rook", x: "Several pings missed recently. Check that notifications are on for Rook.", live: p.at === "now" });
+        items.push({ k: "missed", s: `Missed ping · ${t}`, x: `You missed a ping at ${time}. It went to another responder. Missed pings don't count against you the way turning one down does.`, live: isLive });
+        if (misses === 2) items.push({ k: "nudge", s: "From Rook", x: "Several pings missed recently. Check that notifications are on for Rook.", live: isLive });
       } else hidden++;
     });
     items.reverse();
     let html = items.map(m => `<div class="msg ${m.k} ${m.live ? "enter" : ""}" style="margin-bottom:8px"><small>${m.s}</small>${m.x}</div>`).join("");
-    if (!fixed && hidden) html = `<div class="ghost">${hidden} ping${hidden > 1 ? "s" : ""} came and went without a trace this week. Meteor Mite never sees that she missed ${hidden > 1 ? "them" : "it"}.</div>` + html;
-    if (!items.length) html += `<div class="idle"><div class="ring"></div>Waiting for pings</div>`;
+    if (!fixed && hidden) html = `<div class="ghost">${plural(hidden, "ping")} came and went without a trace this week. ${r.name} never sees ${hidden > 1 ? "them" : "it"} missed.</div>` + html;
+    if (!items.length && !(!fixed && hidden)) html += `<div class="idle"><div class="ring"></div>Waiting for pings</div>`;
     $("feed").innerHTML = html;
     const last = pings.filter(p => p.at !== "now").pop();
     $("clock").textContent = last ? last.at.slice(11) : "—";
   }
 
+  // ---- Estimate chart: home-area pings per week, actual vs. estimated with the fix ----
+  function renderEstimate() {
+    const r = R();
+    $("estTitle").textContent = `What the fix would have changed for ${r.name}`;
+    $("estSub").textContent = `Pings for callouts in ${r.area}, ${r.name}'s own area, per week. From 12 Aug the shaded range is our estimate if the fix had shipped with 4.2.`;
+    const W = 640, H = 230, L = 34, Rr = 10, T = 14, B = 30, max = 16;
+    const x0 = k => L + (W - L - Rr) / WEEKS.length * k, bw = (W - L - Rr) / WEEKS.length;
+    const y = v => T + (H - T - B) * (1 - Math.min(v, max) / max);
+    let s = "";
+    s += `<rect class="sel" x="${x0(state.week) + 2}" y="${T - 6}" width="${bw - 4}" height="${H - T - B + 6}" rx="6"></rect>`;
+    for (const v of [0, 5, 10, 15]) s += `<line class="grid" x1="${L}" x2="${W - Rr}" y1="${y(v)}" y2="${y(v)}"></line><text x="${L - 6}" y="${y(v) + 4}" text-anchor="end">${v}</text>`;
+    s += `<line class="usual" x1="${L}" x2="${W - Rr}" y1="${y(r.preHome)}" y2="${y(r.preHome)}"></line>`;
+    WEEKS.forEach((w, k) => {
+      const cx = x0(k) + bw / 2, a = r.homeActual[k];
+      const hasEst = k >= 2, lo = hasEst ? r.est.low[k - 2] : null, hi = hasEst ? r.est.high[k - 2] : null;
+      const ax = hasEst ? cx - 24 : cx - 11;
+      const ah = Math.max(0, y(0) - y(a));
+      // Actual bar, rounded at the data end only.
+      if (a > 0) s += `<path class="actual" d="M${ax},${y(0)} v${-(ah - 4)} q0,-4 4,-4 h14 q4,0 4,4 v${ah - 4} z"></path>`;
+      else s += `<line class="bandedge" style="stroke:var(--chart-actual)" x1="${ax}" x2="${ax + 22}" y1="${y(0) - 1}" y2="${y(0) - 1}"></line>`;
+      s += `<text class="vlabel" x="${ax + 11}" y="${y(a) - 5}" text-anchor="middle">${a}</text>`;
+      if (hasEst) {
+        const bx = cx + 2;
+        s += `<rect class="band" x="${bx}" y="${y(hi)}" width="22" height="${Math.max(2, y(lo) - y(hi))}" rx="2"></rect>`;
+        s += `<line class="bandedge" x1="${bx}" x2="${bx + 22}" y1="${y(hi)}" y2="${y(hi)}"></line><line class="bandedge" x1="${bx}" x2="${bx + 22}" y1="${y(lo)}" y2="${y(lo)}"></line>`;
+        if (k === WEEKS.length - 1) s += `<text x="${bx + 11}" y="${y(hi) - 5}" text-anchor="middle">${Math.round(lo)}–${Math.round(hi)}</text>`;
+      }
+      s += `<text x="${cx}" y="${H - 10}" text-anchor="middle">${w.label}${w.ship ? " ·4.2" : ""}</text>`;
+      s += `<rect class="hit" data-k="${k}" x="${x0(k)}" y="${T - 6}" width="${bw}" height="${H - T - B + 6}"></rect>`;
+    });
+    $("estChart").innerHTML = s;
+    $("usualVal").textContent = `~${r.preHome}`;
+
+    const tip = $("estTip"), wrap = tip.parentElement;
+    $("estChart").querySelectorAll(".hit").forEach(h => {
+      h.onmousemove = e => {
+        const k = +h.dataset.k, a = r.homeActual[k];
+        const est = k >= 2 ? `<br>With the fix (estimate): ${r.est.low[k - 2].toFixed(1)}–${r.est.high[k - 2].toFixed(1)}` : "<br>Before 4.2: no estimate needed";
+        tip.innerHTML = `<b>Week of ${WEEKS[k].label}</b><br>Actual: ${plural(a, "ping")} in ${r.area}${est}<br>${r.area} callouts: ${r.areaN[k]}`;
+        const box = wrap.getBoundingClientRect();
+        tip.style.display = "block";
+        tip.style.left = Math.min(box.width - 250, Math.max(0, e.clientX - box.left + 12)) + "px";
+        tip.style.top = Math.max(0, e.clientY - box.top - 60) + "px";
+      };
+      h.onmouseleave = () => { tip.style.display = "none"; };
+      h.onclick = () => { state.week = +h.dataset.k; state.day = null; render(); };
+    });
+
+    const t = $("estTable");
+    t.hidden = !state.table;
+    $("estTableBtn").textContent = state.table ? "Hide table" : "Show as table";
+    t.innerHTML = `<tr><th>Week of</th><th>${r.area} callouts</th><th>Actual pings</th><th>With the fix (estimate)</th></tr>` +
+      WEEKS.map((w, k) => `<tr><td>${w.label}</td><td>${r.areaN[k]}</td><td>${r.homeActual[k]}</td><td>${k >= 2 ? `${r.est.low[k - 2].toFixed(1)}–${r.est.high[k - 2].toFixed(1)}` : "—"}</td></tr>`).join("");
+
+    const m42 = r.est.m42.map(v => v.toFixed(1)).join(" → "), act = r.homeActual.slice(2).join(" → ");
+    $("estMethod").innerHTML = `How this is estimated: we replayed ${poss(r)} routing score ping by ping, then simulated each ${r.area} callout from 12 Aug ` +
+      `(how often a responder is asked at each score is measured from the real data). With the fix, a miss costs 0.03 instead of 0.12, and a score below neutral climbs back 5% of the way each day. ` +
+      `Low end: ${r.name} keeps missing ${r.ownMiss}% of pings, as after 4.2. High end: answers like a typical responder after 4.2 (18% missed). ` +
+      `Check: the same replay under 4.2's own rules gives ${m42} pings a week; what actually happened was ${act}. These are illustrative values; Wen Li sets the real penalty and recovery rate.`;
+  }
+
+  // ---- Controls ----
   function renderControls() {
+    $("who").innerHTML = ORDER.map(k => `<button data-who="${k}" aria-pressed="${k === state.who}">${RESP[k].name}</button>`).join("");
+    $("who").querySelectorAll("button").forEach(b => b.onclick = () => {
+      if (state.timer) return;
+      state.who = b.dataset.who; state.day = null; state.drawerOpen = false; render();
+    });
     $("modeOld").setAttribute("aria-pressed", state.mode === "old");
     $("modeNew").setAttribute("aria-pressed", state.mode === "new");
     $("weeks").innerHTML = WEEKS.map((w, i) =>
@@ -571,54 +740,15 @@
     $("weeks").querySelectorAll("button").forEach(b => b.onclick = () => { state.week = +b.dataset.w; state.day = null; render(); });
     $("rule1").setAttribute("aria-pressed", state.rule === 1);
     $("rule2").setAttribute("aria-pressed", state.rule === 2);
-    const [a, b] = STORY[WEEKS[state.week].key];
+    const [a, b] = storyFor(R(), state.week);
     $("storyText").textContent = a;
     $("storyFact").textContent = b;
+    if (EMBED) parent.postMessage({ story: [a, b], mode: state.mode }, "*");
   }
 
-  function renderAlerts() {
-    const i = state.week, fixed = state.mode === "new", first = i * 7;
-    const days = DAILY.slice(first, first + 7);
-    $("miteDays").innerHTML = days.map((d, j) => {
-      const k = first + j, on = fixed && alertsOn(k);
-      return `<button class="day ${d.mite === 0 ? "zero" : ""} ${on ? "alert" : ""}" data-k="${k}" aria-pressed="${state.day === k}"
-        title="${dayLabel(d.date)}: ${d.mite} ping${d.mite === 1 ? "" : "s"}"><span class="dn">${DAYS[d.date.getUTCDay()]}</span><span class="dc">${on ? "!" : d.mite}</span></button>`;
-    }).join("");
-    $("miteDays").querySelectorAll(".day").forEach(b => b.onclick = () => { state.day = state.day === +b.dataset.k ? null : +b.dataset.k; renderAlerts(); });
+  function render() { renderControls(); renderFrame(); renderCards(); renderAlerts(); renderDrawer(); renderPhone(); renderEstimate(); }
 
-    if (state.day !== null && state.day >= first && state.day < first + 7) {
-      const d = DAILY[state.day];
-      const gale = d.gale ? `The Gale took ${d.gale}.` : "";
-      $("dayNote").textContent = d.mite
-        ? `${dayLabel(d.date)}: ${d.mite} ping${d.mite === 1 ? "" : "s"} for Meteor Mite. ${d.east} Eastgate callout${d.east === 1 ? "" : "s"}.`
-        : d.east
-          ? `${dayLabel(d.date)}: no pings for Meteor Mite, while ${d.east} Eastgate callout${d.east === 1 ? "" : "s"} went out. ${gale}`
-          : `${dayLabel(d.date)}: no pings, but no Eastgate callouts either, so no alert.`;
-    } else {
-      $("dayNote").textContent = fixed ? "Pings per day. Click a day for detail." : "";
-    }
-
-    if (!fixed) { $("alerts").innerHTML = ""; return; }
-    const hits = days.map((d, j) => first + j).filter(alertsOn);
-    if (!hits.length) { $("alerts").innerHTML = ""; return; }
-    const items = hits.map(k => {
-      const d = DAILY[k];
-      if (state.rule === 1)
-        return `<li>${dayLabel(d.date)}: no pings for Meteor Mite, while ${d.east} Eastgate callout${d.east === 1 ? "" : "s"} went out${d.gale ? ` (The Gale took ${d.gale})` : ""}.</li>`;
-      let start = k; while (quiet(start - 1)) start--;
-      const n = k - start + 1, total = DAILY.slice(start, k + 1).reduce((a, x) => a + x.east, 0);
-      return `<li>${dayLabel(d.date)}: no pings for Meteor Mite for ${n} days in a row (since ${dayLabel(DAILY[start].date)}), while ${total} Eastgate callouts went out.</li>`;
-    });
-    const normal = i < 2;
-    $("alerts").innerHTML = `<div class="alerts" role="status">
-      <div class="head"><span class="bell">!</span>Meteor Mite: ${hits.length} no-ping alert${hits.length === 1 ? "" : "s"} this week</div>
-      <ul>${items.join("")}</ul>
-      ${normal ? `<div class="caveat">This was a normal week: she took ${weekNums(i).mite[0]} of ${weekNums(i).miteTotal} pings. One quiet day on its own can just be The Gale getting there first.</div>` : ""}
-    </div>`;
-  }
-
-  function render() { renderControls(); renderCards(); renderAlerts(); renderDrawer(); renderPhone(); }
-
+  // ---- Live ping on the phone ----
   function sendPing() {
     if (state.timer) return;
     $("send").disabled = true;
@@ -632,12 +762,11 @@
       if (left <= 0) resolve("missed");
     }, 100);
   }
-
   function resolve(outcome) {
     clearInterval(state.timer); state.timer = null;
     $("incoming").classList.remove("show");
     $("send").disabled = false;
-    state.live.push({ at: "now", outcome, area: "Eastgate", by: outcome === "taken" ? "Meteor Mite" : "The Gale", week: state.week });
+    state.live.push({ who: state.who, at: "now", outcome, area: R().area, by: outcome === "taken" ? "self" : "other", week: state.week });
     state.flashLive = true;
     if (state.mode === "new") state.drawerOpen = true;
     render();
@@ -652,11 +781,25 @@
   $("modeNew").onclick = () => { state.mode = "new"; render(); };
   $("rule1").onclick = () => { state.rule = 1; render(); };
   $("rule2").onclick = () => { state.rule = 2; render(); };
+  $("estTableBtn").onclick = () => { state.table = !state.table; renderEstimate(); };
   $("reset").onclick = () => {
-    if (state.timer) { clearInterval(state.timer); }
+    if (state.timer) clearInterval(state.timer);
     $("incoming").classList.remove("show"); $("send").disabled = false;
-    state = fresh(); render();
+    state = fresh(state); render();
   };
+
+  // before-after.html loads this page twice (?embed=1&mode=old / new) and drives week and responder.
+  if (EMBED) {
+    document.body.classList.add("embed");
+    window.addEventListener("message", e => {
+      if (!e.data) return;
+      if (typeof e.data.week === "number" && WEEKS[e.data.week]) state.week = e.data.week;
+      if (RESP[e.data.who]) state.who = e.data.who;
+      state.day = null; state.drawerOpen = false; render();
+    });
+    new ResizeObserver(() => parent.postMessage({ height: document.documentElement.scrollHeight, mode: state.mode }, "*"))
+      .observe(document.body);
+  }
 
   render();
 </script>
