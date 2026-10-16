@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Release 4.2 Report</title>
+<style>
+  :root {
+    --bg: #f4f4ee; --panel: #ffffff; --ink: #1d2017; --muted: #5f6458; --line: #dcdcd0;
+    --accent: #5b6b1e; --accent-soft: #eef1dd; --accent-strong: #556320;
+    --warn: #b0562b; --warn-soft: #f8e6dc; --good: #1d7766; --good-soft: #e0f2ee;
+    --code-bg: #20231b; --code-ink: #e6ead6; --chart-actual: #8a8f98;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121410; --panel: #1b1e18; --ink: #e8eadf; --muted: #a2a796; --line: #30352a;
+      --accent: #b6c46b; --accent-soft: #2a3018; --accent-strong: #556320;
+      --warn: #eb9a72; --warn-soft: #3a2519; --good: #74cfbd; --good-soft: #173430;
+      --code-bg: #0b0c09; --code-ink: #dfe4cc; --chart-actual: #7d838c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121410; --panel: #1b1e18; --ink: #e8eadf; --muted: #a2a796; --line: #30352a;
+    --accent: #b6c46b; --accent-soft: #2a3018; --accent-strong: #556320;
+    --warn: #eb9a72; --warn-soft: #3a2519; --good: #74cfbd; --good-soft: #173430;
+    --code-bg: #0b0c09; --code-ink: #dfe4cc; --chart-actual: #7d838c;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-snap-type: y proximity; scroll-behavior: smooth; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+  section.slide { min-height: 100vh; scroll-snap-align: start; display: flex; align-items: center; padding: 60px 28px 80px; position: relative; overflow: hidden; }
+  section.slide:nth-of-type(even) { background: color-mix(in srgb, var(--panel) 55%, var(--bg)); }
+  .inner { max-width: 1100px; margin: 0 auto; width: 100%; position: relative; z-index: 1; }
+  .kicker { font-size: 12px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--accent); margin: 0 0 12px; }
+  h1 { font-size: clamp(36px, 6vw, 68px); line-height: 1.03; margin: 0 0 20px; letter-spacing: -.025em; }
+  h2 { font-size: clamp(28px, 3.8vw, 44px); line-height: 1.1; margin: 0 0 16px; letter-spacing: -.015em; }
+  h3 { font-size: 18px; margin: 0 0 6px; }
+  p { margin: 0 0 12px; }
+  .lede { font-size: clamp(18px, 2vw, 23px); color: var(--muted); max-width: 840px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 14px; }
+  .hl { color: var(--accent); }
+  .hot { color: var(--warn); }
+
+  /* Decorative rings */
+  .rings { position: absolute; right: -160px; top: -120px; width: 620px; height: 620px; z-index: 0; opacity: .55; pointer-events: none; }
+  .rings circle { fill: none; stroke: var(--accent); }
+
+  /* Title */
+  .title-slide { background: radial-gradient(1200px 600px at 85% 10%, var(--accent-soft), transparent 60%), var(--bg); }
+  .meta { display: flex; flex-wrap: wrap; gap: 8px 10px; margin-top: 28px; font-size: 14px; color: var(--muted); }
+  .chip { display: inline-block; padding: 4px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--panel); }
+  .people4 { display: flex; gap: 10px; margin-top: 34px; flex-wrap: wrap; }
+  .avatar { width: 54px; height: 54px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-weight: 800;
+    background: var(--panel); border: 2px dashed var(--warn); color: var(--warn); font-size: 15px; }
+  .people4 .lbl { align-self: center; font-size: 14px; color: var(--muted); margin-left: 6px; }
+
+  /* Story cards */
+  .story { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px; }
+  .card .emoji { width: 44px; height: 44px; border-radius: 12px; background: var(--accent-soft); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 12px; }
+  .card.bad .emoji { background: var(--warn-soft); }
+  .card p { color: var(--muted); font-size: 15px; margin: 0; }
+
+  /* Stat tiles */
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin: 26px 0 18px; }
+  .stat { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .stat b { display: block; font-size: clamp(26px, 3.2vw, 38px); line-height: 1.05; letter-spacing: -.02em; }
+  .stat span { display: block; font-size: 14px; color: var(--muted); margin-top: 8px; }
+  .stat.hot b { color: var(--warn); }
+  .callout { border-left: 4px solid var(--accent); background: var(--panel); padding: 14px 18px; border-radius: 0 12px 12px 0; font-size: 16px; }
+
+  /* Timeline */
+  .timeline { position: relative; margin-top: 30px; display: grid; grid-template-columns: repeat(8, 1fr); gap: 10px; }
+  .timeline::before { content: ""; position: absolute; left: 0; right: 0; top: 19px; height: 3px; background: linear-gradient(90deg, var(--accent), var(--warn) 30%, var(--warn) 75%, var(--accent)); border-radius: 2px; }
+  .ev { position: relative; padding-top: 44px; }
+  .ev .pin { position: absolute; top: 9px; left: 0; width: 22px; height: 22px; border-radius: 50%; background: var(--panel); border: 3px solid var(--warn); }
+  .ev.good .pin { border-color: var(--accent); }
+  .ev .d { font-size: 12px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+  .ev .t { font-size: 14px; line-height: 1.35; margin-top: 4px; }
+
+  /* Loop diagram */
+  .loopwrap { display: grid; grid-template-columns: 1fr 1.1fr; gap: 32px; align-items: center; }
+  #loop { width: 100%; height: auto; }
+  #loop .node rect { fill: var(--panel); stroke: var(--line); stroke-width: 1.5; }
+  #loop .node.hot rect { stroke: var(--warn); stroke-width: 2.5; }
+  #loop .node text { fill: var(--ink); font-size: 15px; font-family: inherit; font-weight: 600; }
+  #loop .node .sub { fill: var(--muted); font-size: 12px; font-weight: 400; }
+  #loop .arrow { stroke: var(--accent); stroke-width: 2.5; fill: none; }
+  #loop .ah { fill: var(--accent); }
+  #loop .centre { fill: var(--warn); font-size: 14px; font-weight: 800; letter-spacing: .1em; }
+  #loop .centre2 { fill: var(--muted); font-size: 12px; }
+
+  /* Module slides */
+  .mod { display: grid; grid-template-columns: 1.3fr 1fr; gap: 28px; align-items: start; }
+  .modtag { display: inline-flex; align-items: center; gap: 10px; font-size: 13px; color: var(--muted); margin-bottom: 10px; font-weight: 600; }
+  .modtag .n { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--panel); display: inline-flex;
+    align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+  .prompt { background: var(--code-bg); color: var(--code-ink); border-radius: 14px; padding: 18px 20px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 15.5px; line-height: 1.5; box-shadow: 0 8px 24px rgba(0,0,0,.12); }
+  .prompt .lbl { display: block; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; font-size: 11px; letter-spacing: .12em; text-transform: uppercase; opacity: .7; margin-bottom: 10px; }
+  .prompt .caret { color: #b6c46b; margin-right: 8px; }
+  .prompt.none { background: transparent; color: var(--muted); border: 1px dashed var(--line); font-family: inherit; box-shadow: none; font-size: 14px; }
+  .prompt .src { display: block; margin-top: 12px; font-size: 12px; opacity: .6; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+  .finding { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 20px 22px; }
+  .finding .lbl { font-size: 11px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; display: block; }
+  .bigq { font-size: clamp(20px, 2.3vw, 26px); line-height: 1.28; font-weight: 650; margin-bottom: 10px; }
+  .side { display: flex; flex-direction: column; gap: 14px; }
+  .plain { background: var(--accent-soft); border-radius: 12px; padding: 12px 16px; font-size: 15px; }
+  .plain b { color: var(--accent); }
+
+  /* Ticket split */
+  .split { display: flex; height: 48px; border-radius: 10px; overflow: hidden; margin: 14px 0 8px; gap: 2px; }
+  .split div { display: flex; align-items: center; padding: 0 14px; font-size: 14px; font-weight: 650; color: #fff; }
+  .split .q { background: var(--warn); flex: 30; }
+  .split .v { background: #8a8f98; flex: 15; }
+  .splitkey { display: flex; justify-content: space-between; font-size: 13px; color: var(--muted); gap: 12px; }
+
+  /* Small multiples */
+  .multiples { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-top: 4px; }
+  .mini { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px 6px; }
+  .mini h4 { margin: 0; font-size: 14px; display: flex; justify-content: space-between; }
+  .mini h4 span { color: var(--muted); font-weight: 500; font-size: 12px; }
+  .mini svg { width: 100%; height: auto; display: block; }
+  .mini .bar { fill: var(--accent); }
+  .mini .bar.after { fill: var(--warn); }
+  .mini .ship { stroke: var(--muted); stroke-dasharray: 3 3; stroke-width: 1; }
+  .mini text { fill: var(--muted); font-size: 10px; font-family: inherit; }
+  .mini .val { fill: var(--ink); font-weight: 650; }
+
+  /* Scorecard (module 4) */
+  .score { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 14px 0; }
+  .score .s { border-radius: 14px; padding: 16px; text-align: center; border: 1px solid var(--line); background: var(--panel); }
+  .score .s b { display: block; font-size: 30px; letter-spacing: -.02em; }
+  .score .s span { font-size: 13px; color: var(--muted); }
+  .score .take b { color: var(--good); }
+  .score .no b, .score .miss b { color: var(--warn); }
+  .score .miss { border: 2px solid var(--warn); }
+  pre.code { background: var(--code-bg); color: var(--code-ink); border-radius: 12px; padding: 14px 16px; font: 13px/1.55 ui-monospace, "SF Mono", Menlo, monospace; overflow-x: auto; margin: 0; }
+  pre.code .c { color: #9aa184; } pre.code .k { color: #b6c46b; } pre.code .mark { background: rgba(235,154,114,.25); border-radius: 3px; }
+
+  /* Prototype frame */
+  .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 10px; overflow: hidden; background: var(--panel); margin-top: 12px; }
+  .tabs button { font: inherit; font-size: 14px; border: 0; background: transparent; color: var(--ink); padding: 8px 14px; cursor: pointer; }
+  .tabs button[aria-selected="true"] { background: var(--accent); color: var(--panel); font-weight: 650; }
+  .frame { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; background: var(--panel); margin-top: 12px; box-shadow: 0 14px 40px rgba(0,0,0,.14); }
+  .frame .bar { display: flex; gap: 6px; align-items: center; padding: 9px 14px; border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .frame .bar i { width: 11px; height: 11px; border-radius: 50%; background: var(--line); display: inline-block; }
+  .frame .bar i:nth-child(1) { background: #e0796a; } .frame .bar i:nth-child(2) { background: #e3b45b; } .frame .bar i:nth-child(3) { background: #8fbf6a; }
+  .frame .bar span { margin-left: 8px; }
+  .frame .bar a { margin-left: auto; color: var(--accent); font-weight: 650; text-decoration: none; }
+  .frame iframe { width: 100%; height: 680px; border: 0; display: block; background: var(--bg); }
+  .tryit { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-top: 14px; }
+  .tryit div { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; font-size: 14px; }
+  .tryit b { display: block; color: var(--accent); font-size: 12px; letter-spacing: .08em; text-transform: uppercase; margin-bottom: 2px; }
+
+  /* Range chart */
+  #range { width: 100%; height: auto; }
+  #range text { fill: var(--muted); font-size: 12px; font-family: inherit; }
+  #range .name { fill: var(--ink); font-size: 14px; font-weight: 650; }
+  #range .grid { stroke: var(--line); }
+  #range .band { fill: color-mix(in srgb, var(--accent) 35%, transparent); stroke: var(--accent); stroke-width: 2; }
+  #range .actual { fill: var(--chart-actual); stroke: var(--panel); stroke-width: 2; }
+  #range .usual { stroke: var(--ink); stroke-width: 2; stroke-dasharray: 4 3; }
+  #range .row:hover .band { fill: color-mix(in srgb, var(--accent) 55%, transparent); }
+  .legend { display: flex; flex-wrap: wrap; gap: 6px 20px; font-size: 13px; color: var(--muted); margin: 10px 0; }
+  .sw { display: inline-block; width: 14px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+  .sw.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--chart-actual); }
+  .sw.band { background: color-mix(in srgb, var(--accent) 35%, transparent); border: 2px solid var(--accent); height: 12px; }
+  .sw.usual { width: 2px; height: 14px; border-left: 2px dashed var(--ink); border-radius: 0; vertical-align: -2px; }
+  .tip { position: fixed; pointer-events: none; background: var(--ink); color: var(--panel); font-size: 13px; padding: 8px 10px; border-radius: 8px; max-width: 260px; display: none; z-index: 20; line-height: 1.4; }
+
+  /* Lessons */
+  .lessons { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin-top: 22px; }
+  .lesson { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px; display: flex; flex-direction: column; gap: 8px; }
+  .lesson .what { font-size: 13px; color: var(--warn); font-weight: 650; }
+  .lesson .what::before { content: "What went wrong · "; color: var(--muted); font-weight: 500; }
+  .lesson h3 { font-size: 17px; margin: 0; }
+  .lesson p { margin: 0; font-size: 14px; color: var(--muted); }
+  .lesson .tag { margin-top: auto; align-self: flex-start; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); }
+  .lesson .tag.other { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+
+  /* Checklist */
+  .checks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin: 18px 0; }
+  .check { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; }
+  .check .ic { width: 34px; height: 34px; border-radius: 10px; background: var(--accent); color: var(--panel); display: flex; align-items: center; justify-content: center; font-weight: 800; }
+  .check h3 { font-size: 15px; margin: 10px 0 4px; }
+  .check p { font-size: 13px; color: var(--muted); margin: 0; }
+  .verdicts { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .verdict { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 18px 20px; }
+  .verdict ul { list-style: none; padding: 0; margin: 10px 0 0; font-size: 15px; }
+  .verdict li { display: grid; grid-template-columns: 26px 1fr; gap: 6px; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .verdict li:last-child { border-bottom: 0; }
+  .ok { color: var(--good); font-weight: 800; } .no { color: var(--warn); font-weight: 800; } .part { color: var(--muted); font-weight: 800; }
+  .verdict .end { margin-top: 10px; font-weight: 700; font-size: 15px; }
+  .verdict.stop { border: 2px solid var(--warn); }
+
+  /* Next steps */
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 20px 0 0; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .steps li { counter-increment: s; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 14px 18px 14px 62px; position: relative; font-size: 15px; color: var(--muted); }
+  .steps li::before { content: counter(s); position: absolute; left: 18px; top: 14px; width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--panel); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 14px; }
+  .steps b { display: block; color: var(--ink); font-size: 16px; }
+
+  /* Navigation */
+  .progress { position: fixed; top: 0; left: 0; height: 4px; background: var(--accent); z-index: 11; width: 0; transition: width .3s; }
+  .dots { position: fixed; right: 16px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; gap: 9px; z-index: 10; }
+  .dots button { width: 10px; height: 10px; border-radius: 50%; border: 0; padding: 0; background: var(--line); cursor: pointer; }
+  .dots button[aria-current="true"] { background: var(--accent); transform: scale(1.35); }
+  .navbtns { position: fixed; bottom: 16px; right: 16px; display: flex; gap: 8px; z-index: 10; }
+  .navbtns button { font: inherit; font-size: 13px; background: var(--panel); color: var(--ink); border: 1px solid var(--line); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+  .counter { position: fixed; bottom: 22px; left: 16px; font-size: 12px; color: var(--muted); z-index: 10; }
+
+  @media (max-width: 900px) {
+    section.slide { padding: 44px 16px 80px; min-height: auto; }
+    html { scroll-snap-type: none; }
+    .stats, .checks, .tryit { grid-template-columns: 1fr 1fr; }
+    .mod, .loopwrap, .verdicts, .story, .lessons, .steps { grid-template-columns: 1fr; }
+    .timeline { grid-template-columns: 1fr 1fr; row-gap: 18px; }
+    .timeline::before { display: none; }
+    .dots, .rings { display: none; }
+    .frame iframe { height: 600px; }
+  }
+  @media print {
+    html { scroll-snap-type: none; }
+    section.slide { min-height: auto; break-after: page; }
+    .dots, .navbtns, .counter, .progress { display: none; }
+  }
+
+  /* Chapters and forward timeline */
+  .chapter { display: table; font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--panel); background: var(--accent); padding: 4px 12px; border-radius: 999px; margin: 0 0 14px; }
+  .partpill { position: fixed; top: 14px; left: 16px; z-index: 10; font-size: 12px; font-weight: 700; color: var(--muted); background: var(--panel); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; opacity: 0; transition: opacity .3s; }
+  .partpill.on { opacity: 1; }
+  .rowlbl { font-size: 12px; font-weight: 800; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin: 18px 0 0; }
+  .timeline { grid-template-columns: repeat(var(--cols, 8), 1fr); }
+  .timeline.future { --cols: 6; }
+  .timeline.future::before { background: repeating-linear-gradient(90deg, var(--accent) 0 10px, transparent 10px 16px); }
+  .ev.next .pin { border-color: var(--accent); border-style: dashed; }
+  .road { list-style: none; padding: 0; margin: 24px 0 0; position: relative; display: grid; gap: 12px; }
+  .road::before { content: ""; position: absolute; left: 58px; top: 10px; bottom: 10px; width: 3px; background: repeating-linear-gradient(180deg, var(--accent) 0 10px, transparent 10px 16px); }
+  .road li { position: relative; display: grid; grid-template-columns: 120px 1fr; column-gap: 22px; background: transparent; font-size: 15px; color: var(--muted); }
+  .road li b { display: block; color: var(--ink); font-size: 17px; grid-column: 2; }
+  .road li { grid-auto-flow: row; }
+  .road .when { grid-row: 1 / span 2; align-self: start; justify-self: start; background: var(--accent); color: var(--panel); font-weight: 800; font-size: 13px; padding: 6px 12px; border-radius: 999px; position: relative; z-index: 1; min-width: 100px; text-align: center; }
+  .road li:last-child .when { background: var(--warn); }
+  @media (max-width: 900px) { .timeline, .timeline.future { grid-template-columns: 1fr 1fr; } .road::before { display: none; } .road li { grid-template-columns: 1fr; } .road .when { grid-row: auto; margin-bottom: 4px; } .partpill { display: none; } }
+</style>
+</head>
+<body>
+<div class="progress" id="progress"></div>
+
+<!-- 1. Title -->
+<section class="slide title-slide">
+  <svg class="rings" viewBox="0 0 620 620" aria-hidden="true"><circle cx="310" cy="310" r="300" stroke-width="1"/><circle cx="310" cy="310" r="230" stroke-width="1.5"/><circle cx="310" cy="310" r="160" stroke-width="2"/><circle cx="310" cy="310" r="90" stroke-width="2.5"/></svg>
+  <div class="inner">
+    <p class="kicker">Rook Dispatch · Final report</p>
+    <h1>Release 4.2 quietly <span class="hot">shut four responders out</span> of their own neighbourhoods.</h1>
+    <p class="lede">What happened, in plain words. How we found it. The fix we built and tested. And how we stop it happening again.</p>
+    <div class="people4" aria-label="The four responders who went quiet">
+      <span class="avatar" title="Farlight">FL</span><span class="avatar" title="The Undertow">TU</span><span class="avatar" title="Meteor Mite">MM</span><span class="avatar" title="Vesper">VS</span>
+      <span class="lbl">Farlight · The Undertow · Meteor Mite · Vesper</span>
+    </div>
+    <div class="meta"><span class="chip">For Helen Achebe</span><span class="chip">From the Dispatch PM</span><span class="chip">16 October 2026</span><span class="chip">Modules 1–6</span></div>
+  </div>
+</section>
+
+<!-- 3. Timeline -->
+<section class="slide">
+  <div class="inner">
+    <p class="kicker">The whole story, in order</p>
+    <h2>From "it went clean" to a fix, and what happens next</h2>
+    <p class="rowlbl">What happened</p>
+    <div class="timeline">
+      <div class="ev good"><span class="pin"></span><div class="d">July</div><div class="t">Normal. Each of the four gets about 12 jobs a week.</div></div>
+      <div class="ev"><span class="pin"></span><div class="d">12 Aug</div><div class="t">4.2 ships. "Went clean, no rollback."</div></div>
+      <div class="ev"><span class="pin"></span><div class="d">13–14 Aug</div><div class="t">The four miss jobs in a cluster and start sliding down the queue.</div></div>
+      <div class="ev"><span class="pin"></span><div class="d">18 Aug</div><div class="t">Complaints run at 3× normal. "My phone never goes off."</div></div>
+      <div class="ev"><span class="pin"></span><div class="d">21 Aug</div><div class="t">The PM who owned the change leaves. "Mostly seasonal."</div></div>
+      <div class="ev"><span class="pin"></span><div class="d">31 Aug</div><div class="t">Farlight gets no jobs all week. The Gale takes 16 of 17 in Eastgate.</div></div>
+      <div class="ev"><span class="pin"></span><div class="d">4 Sep</div><div class="t">Kip: Meteor Mite thinks she's "been forgotten".</div></div>
+      <div class="ev good"><span class="pin"></span><div class="d">13–16 Oct</div><div class="t">Traced in the data and the code. A tested fix and a prototype.</div></div>
+    </div>
+    <p class="rowlbl" style="margin-top:34px">What happens next</p>
+    <div class="timeline future">
+      <div class="ev next"><span class="pin"></span><div class="d">Now</div><div class="t">Helen decides: ship early, or with the next update.</div></div>
+      <div class="ev next"><span class="pin"></span><div class="d">This week</div><div class="t">Wen and Marcus agree how much a miss costs, and how fast scores heal.</div></div>
+      <div class="ev next"><span class="pin"></span><div class="d">Before build</div><div class="t">Check real scores, and whether some buzzes arrived late.</div></div>
+      <div class="ev next"><span class="pin"></span><div class="d">Launch</div><div class="t">The four get their place back. Handlers see why someone's quiet.</div></div>
+      <div class="ev next"><span class="pin"></span><div class="d">+4 weeks</div><div class="t">Did it work? At least 6 jobs a week each, no new "phone never goes off".</div></div>
+      <div class="ev next"><span class="pin"></span><div class="d">Every brief</div><div class="t">The review checklist runs before anything ships.</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. Plain story -->
+<section data-part="Part 1 · August: what happened" class="slide">
+  <div class="inner">
+    <p class="chapter">Part 1 · August</p><p class="kicker">What happened, in plain words</p>
+    <h2>We gave responders less time to answer, then punished them for not answering in time.</h2>
+    <div class="story">
+      <div class="card"><div class="emoji">⏱️</div><h3>1. Less time to answer</h3><p>When a job comes in, Rook buzzes a responder's phone. In August's update, 4.2, we cut the time they have to answer from 90 seconds to 60.</p></div>
+      <div class="card bad"><div class="emoji">📵</div><h3>2. More jobs slipped past</h3><p>Overnight, the share of jobs nobody answered in time jumped from about 1 in 40 to nearly 1 in 5.</p></div>
+      <div class="card bad"><div class="emoji">📉</div><h3>3. Treated as a "no", forever</h3><p>Rook counted a slow answer exactly like saying no. Each one pushed the responder down the queue, and nothing ever let them climb back.</p></div>
+    </div>
+    <div class="stats">
+      <div class="stat hot"><b>1 in 5</b><span>jobs went unanswered in time after the update (was 1 in 40)</span></div>
+      <div class="stat hot"><b>12 → 0</b><span>jobs a week offered to Farlight, from July to the end of August</span></div>
+      <div class="stat"><b>4</b><span>responders pushed out of their own areas, while neighbours took their work</span></div>
+      <div class="stat"><b>45</b><span>complaints after the update, and none before it</span></div>
+    </div>
+    <p class="callout">It wasn't the usual summer slowdown. Summer explains fewer jobs overall, not people missing them, and September brought no recovery.</p>
+  </div>
+</section>
+
+<!-- 4. The loop -->
+<section data-part="Part 1 · August: what happened" class="slide">
+  <div class="inner loopwrap">
+    <div>
+      <p class="kicker">Why it got worse, not better</p>
+      <h2>A trap with no way out</h2>
+      <p class="lede">Every missed buzz moved a responder further back in the queue. Further back meant fewer jobs, and fewer jobs meant fewer chances to win their place back.</p>
+      <p class="muted small">It wasn't that these four were slower or further away. Before the update they were as busy as anyone. The scoring rule alone explains who got pushed out.</p>
+    </div>
+    <svg id="loop" viewBox="0 0 460 420" role="img" aria-label="Loop: less time to answer, more missed buzzes, counted as a no, pushed back in the queue, fewer jobs, fewer chances to recover, and round again">
+      <defs><marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"></path></marker></defs>
+      <g class="node"><rect x="140" y="8" width="180" height="56" rx="12"></rect><text x="230" y="33" text-anchor="middle">Less time to answer</text><text class="sub" x="230" y="52" text-anchor="middle">90 → 60 seconds</text></g>
+      <g class="node"><rect x="290" y="112" width="160" height="56" rx="12"></rect><text x="370" y="137" text-anchor="middle">More missed buzzes</text><text class="sub" x="370" y="156" text-anchor="middle">1 in 40 → 1 in 5</text></g>
+      <g class="node hot"><rect x="290" y="252" width="160" height="56" rx="12"></rect><text x="370" y="277" text-anchor="middle">Counted as a "no"</text><text class="sub" x="370" y="296" text-anchor="middle">and never forgiven</text></g>
+      <g class="node"><rect x="140" y="354" width="180" height="56" rx="12"></rect><text x="230" y="379" text-anchor="middle">Pushed back in the queue</text><text class="sub" x="230" y="398" text-anchor="middle">neighbours asked first</text></g>
+      <g class="node"><rect x="10" y="252" width="160" height="56" rx="12"></rect><text x="90" y="277" text-anchor="middle">Fewer jobs offered</text><text class="sub" x="90" y="296" text-anchor="middle">~12 → 0–1 a week</text></g>
+      <g class="node"><rect x="10" y="112" width="160" height="56" rx="12"></rect><text x="90" y="137" text-anchor="middle">Fewer chances</text><text class="sub" x="90" y="156" text-anchor="middle">to win the place back</text></g>
+      <path class="arrow" marker-end="url(#ah)" d="M300,50 Q350,62 362,106"></path>
+      <path class="arrow" marker-end="url(#ah)" d="M370,172 L370,246"></path>
+      <path class="arrow" marker-end="url(#ah)" d="M362,312 Q350,356 326,372"></path>
+      <path class="arrow" marker-end="url(#ah)" d="M138,372 Q110,356 98,314"></path>
+      <path class="arrow" marker-end="url(#ah)" d="M90,248 L90,174"></path>
+      <path class="arrow" marker-end="url(#ah)" d="M172,152 Q240,215 284,262"></path>
+      <text class="centre" x="230" y="212" text-anchor="middle">NO WAY BACK</text>
+      <text class="centre2" x="230" y="230" text-anchor="middle">nobody could see it happening</text>
+    </svg>
+  </div>
+</section>
+
+<!-- 5. Module 1 -->
+<section data-part="Part 2 · October: how we found it" class="slide">
+  <div class="inner mod">
+    <div>
+      <p class="chapter">Part 2 · October: how we found it</p><div class="modtag"><span class="n">1</span>Origin Story · first day on the job</div>
+      <h2>Started with a hunch, not the handover's answer</h2>
+      <div class="finding">
+        <span class="lbl">What I wrote down on day one</span>
+        <p class="bigq">"A shorter ping wait produces more missed pings, missed pings lower routing priority, and lower priority means fewer pings."</p>
+        <p class="small muted" style="margin:0">Marked "unverified". The handover said it was "mostly the August seasonal dip". Every module after this tested that one sentence, and it held.</p>
+      </div>
+    </div>
+    <div class="side">
+      <div class="prompt none"><span class="lbl">My prompt</span>No prompts were saved for this module: <code>01-origin-story/prompts.md</code> is empty. The quote comes from the working notes in <code>CLAUDE.md</code>, built from the wiki and the handover.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. Module 2 -->
+<section data-part="Part 2 · October: how we found it" class="slide">
+  <div class="inner mod">
+    <div>
+      <div class="modtag"><span class="n">2</span>Super Hearing · listening to complaints</div>
+      <h2>Two kinds of complaint, and both were true</h2>
+      <div class="finding">
+        <span class="lbl">What we found</span>
+        <p class="bigq">Lots of people saw jobs vanish before they could answer. Only a few went completely quiet, and those few were the real emergency.</p>
+        <div class="split" role="img" aria-label="45 complaints: 30 phone gone quiet, 15 gone before I could answer">
+          <div class="q">30 · "my phone never goes off"</div><div class="v">15 · "gone before I could answer"</div>
+        </div>
+        <div class="splitkey"><span>a handful of responders</span><span>about 11 responders</span></div>
+      </div>
+    </div>
+    <div class="side">
+      <div class="prompt"><span class="lbl">My prompt</span><span class="caret">›</span>if both piles are telling the truth how can both be right?<span class="src">02-super-hearing/prompts.md · #6</span></div>
+      <div class="plain"><b>Why it mattered:</b> the "gone before I could answer" complaints had an obvious cause. The "phone never goes off" ones didn't, and they were the ones that needed explaining.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. Module 3 -->
+<section data-part="Part 2 · October: how we found it" class="slide">
+  <div class="inner mod">
+    <div>
+      <div class="modtag"><span class="n">3</span>Rewind · reading the numbers</div>
+      <h2>Four responders, fading out week by week</h2>
+      <p class="muted small" style="margin:0 0 8px">Jobs offered per week. Green is before the update, orange is after. The dashed line is 12 Aug.</p>
+      <div class="multiples" id="multiples"></div>
+    </div>
+    <div class="side">
+      <div class="prompt"><span class="lbl">My prompt</span><span class="caret">›</span>who went quiet in the group?<span class="src">03-rewind/prompts.md · #12</span></div>
+      <div class="finding">
+        <span class="lbl">What we found</span>
+        <p>Everyone missed more after the update. These four had their misses bunch up on 12–14 Aug, then lost their place. Their neighbours took the work: The Gale got 42% more jobs, Sgt. Falkirk 40%.</p>
+        <p class="small muted" style="margin:0">Only about 1 missed job in 7 ever turned into a complaint, and two of the four handlers never complained at all.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. Module 4 -->
+<section data-part="Part 2 · October: how we found it" class="slide">
+  <div class="inner mod">
+    <div>
+      <div class="modtag"><span class="n">4</span>X-Ray Vision · looking inside</div>
+      <h2>The rulebook said one thing. The software did another.</h2>
+      <p class="muted">Our own glossary says a missed buzz is "recorded separately from turned down". Inside the software, it's the same thing:</p>
+      <div class="score">
+        <div class="s take"><b>+8</b><span>points for taking a job</span></div>
+        <div class="s no"><b>−12</b><span>points for saying no</span></div>
+        <div class="s miss"><b>−12</b><span>points for being too slow, the same as a no</span></div>
+      </div>
+      <pre class="code"><span class="c"># the routing code, unchanged since 2019</span>
+<span class="k">def</span> record_declined(responder):
+    <span class="mark">"""They turned it down, or we ran out of time waiting.
+    Score goes down. Same either way</span> ..."""</pre>
+    </div>
+    <div class="side">
+      <div class="plain"><b>In plain English:</b> one slow answer wipes out one and a half good ones, and the score never heals by itself. An engineer asked in 2019 whether it should, and nobody answered.</div>
+      <div class="prompt none"><span class="lbl">My prompt</span>No prompts were saved for this module: <code>04-x-ray-vision/prompts.md</code> is empty. This comes from the routing code in <code>00-rook/code/dispatch-routing/</code>, recorded in the working notes.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 9. Module 5: prototype -->
+<section data-part="Part 3 · 16 October: the fix" class="slide">
+  <div class="inner">
+    <div class="mod" style="grid-template-columns: 1.4fr 1fr; align-items: end">
+      <div>
+        <p class="chapter">Part 3 · 16 October: the fix</p><div class="modtag"><span class="n">5</span>Super Speed · the fix, made real</div>
+        <h2>"Missed isn't No": try it yourself</h2>
+        <p class="muted" style="margin:0">A real, clickable prototype using the responders' actual weeks. On the left is the handler's screen; on the right, the responder's phone. Switch between "Today (4.2)" and "With the fix" to see the difference.</p>
+      </div>
+      <div class="prompt"><span class="lbl">My prompt</span><span class="caret">›</span>Show me this happening to Meteor Mite specifically, using her name, the way Kip would see it.<span class="src">05-super-speed/prompts.md · #8</span></div>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" aria-selected="true" data-src="05-super-speed/prototype.html" data-label="prototype.html · one view, switch before and after">Prototype</button>
+      <button role="tab" aria-selected="false" data-src="05-super-speed/before-after.html" data-label="before-after.html · today and the fix, side by side">Before and after, side by side</button>
+    </div>
+    <div class="frame">
+      <div class="bar"><i></i><i></i><i></i><span id="frameLabel">prototype.html · one view, switch before and after</span><a id="frameOpen" href="05-super-speed/prototype.html" target="_blank" rel="noopener">Open full screen ↗</a></div>
+      <iframe id="proto" src="05-super-speed/prototype.html" title="Working prototype of the fix" loading="lazy"></iframe>
+    </div>
+    <div class="tryit">
+      <div><b>Try</b>Switch responder at the top: Meteor Mite, Farlight, The Undertow or Vesper.</div>
+      <div><b>Try</b>Flip "Today (4.2)" to "With the fix" and watch the handler's screen explain the silence.</div>
+      <div><b>Try</b>Press "Send a callout", then let it run out. The phone says a miss isn't held against you.</div>
+      <div><b>Try</b>Pick the week of 24 Aug to see the two-day "no jobs" alert fire.</div>
+    </div>
+  </div>
+</section>
+
+<!-- 10. Module 6: would it have worked -->
+<section data-part="Part 3 · 16 October: the fix" class="slide">
+  <div class="inner mod">
+    <div>
+      <div class="modtag"><span class="n">6</span>Sidekicks · would the fix have worked?</div>
+      <h2>Yes. All four would have kept working.</h2>
+      <p class="muted small" style="margin:0">Jobs offered in their own area, the last week of August. Hover a row for the numbers.</p>
+      <div class="legend"><span><i class="sw dot"></i>What actually happened</span><span><i class="sw band"></i>With the fix (our estimate)</span><span><i class="sw usual"></i>A normal week before the update</span></div>
+      <svg id="range" viewBox="0 0 560 250" role="img" aria-label="Jobs offered in the last week of August: actual versus estimated with the fix, for four responders"></svg>
+    </div>
+    <div class="side">
+      <div class="prompt"><span class="lbl">My prompt</span><span class="caret">›</span>what else should i consider adding<span class="src">06-sidekicks/prompts.md · #10</span></div>
+      <div class="finding">
+        <span class="lbl">How we know</span>
+        <p>We re-ran August through the scoring rules. With today's rules, the re-run reproduces what really happened. With the fix, it keeps all four between 4 and 14 jobs a week, instead of 0 or 1.</p>
+        <p class="small muted" style="margin:0">One caution: if they keep missing 6 buzzes in 10, the fix only halves the damage. So how long a phone buzzes still needs a look.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11. How to avoid it -->
+<section data-part="Part 4 · From now on: how we'll handle it" class="slide">
+  <div class="inner">
+    <p class="chapter">Part 4 · From now on</p><p class="kicker">How we avoid this in future</p>
+    <h2>Six things went wrong. Each one has a habit that prevents it.</h2>
+    <div class="lessons">
+      <div class="lesson"><div class="what">Nobody said what "working" looked like</div><h3>Decide how we'll know it worked, before we ship</h3><p>The change to buzz time had no success measure, so nobody watched missed jobs after launch.</p><span class="tag">Checklist ②</span></div>
+      <div class="lesson"><div class="what">The owner left nine days later</div><h3>Name an owner who stays through the review</h3><p>The person who owned 4.2's changes left on 21 Aug, and the follow-up had nobody.</p><span class="tag">Checklist ①</span></div>
+      <div class="lesson"><div class="what">The fix came before the problem</div><h3>Say who could get hurt, before what we'll build</h3><p>The roadmap entry said "tune how long a ping waits" and never said why, or for whom.</p><span class="tag">Checklist ④</span></div>
+      <div class="lesson"><div class="what">Two changes shipped at once</div><h3>Keep scope tight, and change one thing at a time</h3><p>Buzz time and queue order changed in the same release, which made the cause hard to see.</p><span class="tag">Checklist ③</span></div>
+      <div class="lesson"><div class="what">Nobody could see the silence</div><h3>Make problems show up on screen, not in complaints</h3><p>Handlers had no explanation, and only 1 miss in 7 was ever reported. The fix adds the explanation and a two-day alert.</p><span class="tag other">Built into the fix</span></div>
+      <div class="lesson"><div class="what">A guess was treated as an answer</div><h3>Check the numbers before deciding</h3><p>"It's seasonal" was a guess made before anyone looked. September proved it wrong. Open questions, like the one from 2019, get answered before launch.</p><span class="tag other">Working habit</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- 12. The skill -->
+<section data-part="Part 4 · From now on: how we'll handle it" class="slide">
+  <div class="inner">
+    <div class="modtag"><span class="n">6</span>Sidekicks · making the habit automatic</div>
+    <h2>My <code>review-checklist</code> skill runs the same four checks on every brief</h2>
+    <div class="checks">
+      <div class="check"><div class="ic">1</div><h3>Names who owns it</h3><p>A named person or team, not just people consulted.</p></div>
+      <div class="check"><div class="ic">2</div><h3>Says how we'll know it worked</h3><p>A target, and when it's checked.</p></div>
+      <div class="check"><div class="ic">3</div><h3>Scope stays the same</h3><p>Nothing quietly added between the ask and the plan.</p></div>
+      <div class="check"><div class="ic">4</div><h3>Problem before the fix</h3><p>Who it hurts comes first.</p></div>
+    </div>
+    <div class="verdicts">
+      <div class="verdict stop">
+        <h3>If it had checked 4.2's "Ping timeout tuning"</h3>
+        <p class="small muted" style="margin:0">The whole entry: "Tune how long a ping waits for an answer before it moves on."</p>
+        <ul>
+          <li><span class="ok">✓</span><span>Owner named (Priya)</span></li>
+          <li><span class="no">✗</span><span>No way to tell if it worked, so nobody watched missed jobs</span></li>
+          <li><span class="ok">✓</span><span>One line, so nothing could drift</span></li>
+          <li><span class="no">✗</span><span>No problem stated, and no thought about who could be hurt</span></li>
+        </ul>
+        <p class="end no">Verdict: not ready. It would have been stopped before launch.</p>
+      </div>
+      <div class="verdict">
+        <h3>On our own fix, "Missed isn't No"</h3>
+        <p class="small muted" style="margin:0">After fixing what the first review found.</p>
+        <ul>
+          <li><span class="part">~</span><span>Owner: "the Dispatch PM", a role kept unnamed by choice</span></li>
+          <li><span class="ok">✓</span><span>All four back to at least 6 jobs a week within four weeks</span></li>
+          <li><span class="ok">✓</span><span>The plan builds exactly what the brief promises</span></li>
+          <li><span class="ok">✓</span><span>Problem comes first</span></li>
+        </ul>
+        <p class="end">3 of 4 pass, and the one gap is out in the open.</p>
+      </div>
+    </div>
+    <div class="prompt" style="margin-top:14px"><span class="lbl">My prompt</span><span class="caret">›</span>run /review-checklist<span class="src">06-sidekicks/prompts.md · #11. The request that created the skill was pasted, so it isn't in the prompt file.</span></div>
+  </div>
+</section>
+
+<!-- 13. Asks -->
+<section data-part="Part 4 · From now on: how we'll handle it" class="slide">
+  <div class="inner">
+    <p class="kicker">How we'll handle it, step by step</p>
+    <h2>Three decisions, four weeks to prove it, and a habit that stays</h2>
+    <ol class="road">
+      <li><span class="when">Now</span><b>Helen: ship early, or with the next update?</b>Waiting keeps the four shut out. If we wait, we can restore their place in the queue first.</li>
+      <li><span class="when">This week</span><b>30 minutes with Wen and Marcus</b>Agree how much a miss should cost, and how fast a score heals. Low scores heal; good ones are never pulled down.</li>
+      <li><span class="when">Before build</span><b>Check two facts</b>The four's real scores before 12 Aug, and whether some buzzes arrived late on the phone.</li>
+      <li><span class="when">Launch</span><b>Ship the fix, and tell people</b>Restore the four's place. Handlers see why someone's quiet and get a two-day alert. Phones explain a missed buzz. Support answers the 45 complaints.</li>
+      <li><span class="when">+4 weeks</span><b>Did it work?</b>All four back to at least 6 jobs a week, misses reported on their own, no new "phone never goes off" complaints. Then decide the buzz time.</li>
+      <li><span class="when">Every time</span><b>Run the review checklist on every brief</b>Owner, success measure, scope, problem first. Nothing ships without all four.</li>
+    </ol>
+    <p class="muted small" style="margin-top:22px">Sources: Rook's ping, callout and ticket records (29 Jun – 7 Sep), the routing code, the Rook wiki (4.2 release page, roadmap, Kip's interview), the handover note, and this repo's prompt files. Files: <code>05-super-speed/brief.md</code>, <code>prototype.html</code>, <code>before-after.html</code>, <code>replay.py</code>, <code>.claude/skills/review-checklist/</code>.</p>
+  </div>
+</section>
+
+<nav class="dots" id="dots" aria-label="Slides"></nav>
+<div class="navbtns"><button id="prev" aria-label="Previous slide">↑ Prev</button><button id="next" aria-label="Next slide">Next ↓</button></div>
+<div class="counter" id="counter"></div>
+<div class="partpill" id="partpill"></div>
+<div class="tip" id="tip"></div>
+
+<script>
+  // Jobs offered per week (real records from rook-database).
+  const WEEKS = ["27 Jul", "3 Aug", "10 Aug", "17 Aug", "24 Aug", "31 Aug"];
+  const FOUR = [
+    { name: "Farlight", area: "Uptown", v: [13, 12, 10, 3, 1, 0] },
+    { name: "The Undertow", area: "Harborside", v: [12, 12, 11, 4, 1, 1] },
+    { name: "Meteor Mite", area: "Eastgate", v: [12, 11, 10, 4, 2, 1] },
+    { name: "Vesper", area: "Old Town", v: [13, 14, 12, 5, 2, 1] },
+  ];
+  document.getElementById("multiples").innerHTML = FOUR.map(r => {
+    const W = 260, H = 96, L = 4, B = 16, bw = 30, gap = (W - L * 2 - bw * 6) / 5, max = 15;
+    const y = v => (H - B) * (1 - v / max) + 4;
+    let s = `<line class="ship" x1="${L + 2 * (bw + gap) + bw * 0.4}" x2="${L + 2 * (bw + gap) + bw * 0.4}" y1="2" y2="${H - B + 4}"></line>`;
+    r.v.forEach((v, k) => {
+      const x = L + k * (bw + gap), h = Math.max(1.5, (H - B + 4) - y(v));
+      const cls = k >= 3 ? "bar after" : "bar";
+      s += `<g><title>Week of ${WEEKS[k]}: ${v} jobs offered</title>` +
+           (v > 0 ? `<path class="${cls}" d="M${x},${H - B + 4} v${-(h - 3)} q0,-3 3,-3 h${bw - 6} q3,0 3,3 v${h - 3} z"></path>` : `<rect class="${cls}" x="${x}" y="${H - B + 2.5}" width="${bw}" height="1.5"></rect>`) +
+           `<text class="val" x="${x + bw / 2}" y="${y(v) - 3}" text-anchor="middle">${v}</text>` +
+           `<text x="${x + bw / 2}" y="${H + 2}" text-anchor="middle">${WEEKS[k]}</text></g>`;
+    });
+    return `<div class="mini"><h4>${r.name} <span>${r.area}</span></h4><svg viewBox="0 0 260 104" role="img" aria-label="${r.name}: ${r.v.join(", ")} jobs a week">${s}</svg></div>`;
+  }).join("");
+
+  // Last week of August: own-area jobs, actual vs estimated with the fix (replay.py).
+  const EST = [
+    { name: "Meteor Mite", area: "Eastgate", usual: 9.8, actual: 0, lo: 4.2, hi: 8.8 },
+    { name: "Farlight", area: "Uptown", usual: 9.5, actual: 0, lo: 3.7, hi: 9.7 },
+    { name: "The Undertow", area: "Harborside", usual: 10.2, actual: 1, lo: 5.5, hi: 10.6 },
+    { name: "Vesper", area: "Old Town", usual: 11.5, actual: 1, lo: 8.1, hi: 13.6 },
+  ];
+  (function () {
+    const svg = document.getElementById("range"), W = 560, L = 140, R = 20, T = 14, rowH = 50, max = 15;
+    const x = v => L + (W - L - R) * v / max;
+    let s = "";
+    for (const v of [0, 5, 10, 15]) s += `<line class="grid" x1="${x(v)}" x2="${x(v)}" y1="${T}" y2="${T + rowH * EST.length}"></line><text x="${x(v)}" y="${T + rowH * EST.length + 18}" text-anchor="middle">${v}</text>`;
+    s += `<text x="${(L + W - R) / 2}" y="${T + rowH * EST.length + 36}" text-anchor="middle">jobs offered a week in their own area</text>`;
+    EST.forEach((r, i) => {
+      const cy = T + rowH * i + rowH / 2;
+      s += `<g class="row" data-i="${i}"><rect x="0" y="${cy - rowH / 2}" width="${W}" height="${rowH}" fill="transparent"></rect>
+        <text class="name" x="0" y="${cy - 2}">${r.name}</text><text x="0" y="${cy + 15}">${r.area}</text>
+        <rect class="band" x="${x(r.lo)}" y="${cy - 9}" width="${x(r.hi) - x(r.lo)}" height="18" rx="4"></rect>
+        <line class="usual" x1="${x(r.usual)}" x2="${x(r.usual)}" y1="${cy - 15}" y2="${cy + 15}"></line>
+        <circle class="actual" cx="${x(r.actual) + 6}" cy="${cy}" r="6"></circle></g>`;
+    });
+    svg.innerHTML = s;
+    const tip = document.getElementById("tip");
+    svg.querySelectorAll(".row").forEach(g => {
+      g.onmousemove = e => {
+        const r = EST[+g.dataset.i];
+        tip.innerHTML = `<b>${r.name}</b> · ${r.area}<br>What happened: ${r.actual}<br>With the fix (estimate): ${r.lo}–${r.hi}<br>A normal week before: ~${r.usual}`;
+        tip.style.display = "block"; tip.style.left = (e.clientX + 14) + "px"; tip.style.top = (e.clientY + 14) + "px";
+      };
+      g.onmouseleave = () => tip.style.display = "none";
+    });
+  })();
+
+  // Prototype tabs.
+  document.querySelectorAll(".tabs button").forEach(b => b.onclick = () => {
+    document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", x === b));
+    document.getElementById("proto").src = b.dataset.src;
+    document.getElementById("frameOpen").href = b.dataset.src;
+    document.getElementById("frameLabel").textContent = b.dataset.label;
+  });
+
+  // Slide navigation.
+  const slides = [...document.querySelectorAll("section.slide")];
+  const dots = document.getElementById("dots");
+  dots.innerHTML = slides.map((_, i) => `<button aria-label="Slide ${i + 1}" data-i="${i}"></button>`).join("");
+  let current = 0;
+  const go = i => slides[Math.max(0, Math.min(slides.length - 1, i))].scrollIntoView({ behavior: "smooth" });
+  const mark = () => {
+    dots.querySelectorAll("button").forEach((b, i) => b.setAttribute("aria-current", i === current));
+    document.getElementById("counter").textContent = `${current + 1} / ${slides.length}`;
+    document.getElementById("progress").style.width = ((current + 1) / slides.length * 100) + "%";
+    const part = slides[current].dataset.part, pill = document.getElementById("partpill");
+    pill.textContent = part || ""; pill.classList.toggle("on", !!part);
+  };
+  // The current slide is the last one whose top has passed a third of the way down the screen.
+  // This works for slides taller than the screen too.
+  const track = () => {
+    const line = window.innerHeight / 3;
+    let i = 0;
+    slides.forEach((s, k) => { if (s.getBoundingClientRect().top <= line) i = k; });
+    if (i !== current) { current = i; mark(); }
+  };
+  window.addEventListener("scroll", track, { passive: true });
+  window.addEventListener("resize", track);
+  dots.querySelectorAll("button").forEach(b => b.onclick = () => go(+b.dataset.i));
+  document.getElementById("prev").onclick = () => go(current - 1);
+  document.getElementById("next").onclick = () => go(current + 1);
+  document.addEventListener("keydown", e => {
+    if (["ArrowDown", "ArrowRight", "PageDown"].includes(e.key)) { e.preventDefault(); go(current + 1); }
+    if (["ArrowUp", "ArrowLeft", "PageUp"].includes(e.key)) { e.preventDefault(); go(current - 1); }
+  });
+  mark();
+</script>
+</body>
+</html>
