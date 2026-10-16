@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Missed isn't No</title>
+<style>
+  :root {
+    --bg: #faf9f6; --paper: #ffffff; --ink: #1d1f23; --muted: #5d6470;
+    --line: #e3e1db; --accent: #2f5d8a; --accent-soft: #e8eef5;
+    --warn: #9a5b13; --warn-soft: #fbf1e3; --good: #2e6b45; --good-soft: #e7f2ea;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #15171a; --paper: #1d2024; --ink: #e8e6e1; --muted: #9aa1ab;
+      --line: #33373d; --accent: #8fb6dc; --accent-soft: #23303d;
+      --warn: #e0a65c; --warn-soft: #3a2d1c; --good: #8cc9a1; --good-soft: #1f3327;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #15171a; --paper: #1d2024; --ink: #e8e6e1; --muted: #9aa1ab;
+    --line: #33373d; --accent: #8fb6dc; --accent-soft: #23303d;
+    --warn: #e0a65c; --warn-soft: #3a2d1c; --good: #8cc9a1; --good-soft: #1f3327;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+  main { max-width: 860px; margin: 32px auto; padding: 40px 48px; background: var(--paper);
+    border: 1px solid var(--line); border-radius: 10px; }
+  header { border-bottom: 2px solid var(--ink); padding-bottom: 14px; margin-bottom: 8px; }
+  .meta { color: var(--muted); font-size: 13px; letter-spacing: .02em; text-transform: uppercase; }
+  h1 { font-size: 34px; margin: 6px 0 4px; letter-spacing: -.01em; }
+  .sub { color: var(--muted); margin: 0; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent);
+    margin: 32px 0 10px; padding-top: 18px; border-top: 1px solid var(--line); }
+  p { margin: 0 0 12px; }
+  .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 16px 0; }
+  .stat { background: var(--accent-soft); border-radius: 8px; padding: 12px 14px; }
+  .stat b { display: block; font-size: 24px; line-height: 1.1; }
+  .stat span { font-size: 13px; color: var(--muted); }
+  .people { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .person { border: 1px solid var(--line); border-radius: 8px; padding: 14px 16px; }
+  .person h3 { margin: 0 0 4px; font-size: 16px; }
+  .person .role { font-size: 13px; color: var(--muted); margin-bottom: 8px; }
+  blockquote { margin: 8px 0 0; padding-left: 12px; border-left: 3px solid var(--line);
+    color: var(--muted); font-style: italic; }
+  .change { display: grid; grid-template-columns: 34px 1fr; gap: 10px; margin-bottom: 18px; }
+  .num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: var(--paper);
+    display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; }
+  .change h3 { margin: 2px 0 4px; font-size: 16px; }
+  .mock { margin: 10px 0 4px; border: 1px solid var(--line); border-radius: 8px; padding: 12px 14px;
+    background: var(--bg); font-size: 14px; }
+  .mock .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 6px; }
+  .mock .alert { border-left: 3px solid var(--warn); background: var(--warn-soft); padding: 8px 10px; border-radius: 4px; }
+  .phone { max-width: 340px; border-radius: 14px; }
+  .phone .note { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 6px; }
+  ul.nots { list-style: none; padding: 0; margin: 0; display: grid; grid-template-columns: 1fr 1fr; gap: 8px 20px; }
+  ul.nots li { padding-left: 22px; position: relative; font-size: 15px; }
+  ul.nots li::before { content: "✕"; position: absolute; left: 0; color: var(--muted); font-weight: 700; }
+  .benefit { display: grid; grid-template-columns: 110px 1fr; gap: 6px 14px; font-size: 15px; }
+  .tag { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em;
+    padding: 3px 8px; border-radius: 4px; align-self: start; text-align: center; }
+  .t-most { background: var(--good-soft); color: var(--good); }
+  .t-some { background: var(--accent-soft); color: var(--accent); }
+  .t-ind { background: var(--bg); color: var(--muted); border: 1px solid var(--line); }
+  .t-not { background: var(--warn-soft); color: var(--warn); }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted);
+    padding: 8px 10px; border-bottom: 2px solid var(--line); }
+  td { padding: 10px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td:first-child { width: 36%; }
+  td b { display: block; margin-bottom: 2px; }
+  .owners { display: grid; grid-template-columns: 160px 1fr; gap: 6px 14px; font-size: 15px; }
+  .owners dt { font-weight: 600; } .owners dd { margin: 0; }
+  ol { padding-left: 20px; margin: 0; }
+  .open li, ol li { margin-bottom: 4px; }
+  footer { margin-top: 28px; color: var(--muted); font-size: 13px; }
+  @media (max-width: 640px) {
+    main { margin: 0; padding: 24px 16px; border: 0; border-radius: 0; }
+    .stats, .people, ul.nots { grid-template-columns: 1fr; }
+    .benefit, .owners { grid-template-columns: 1fr; }
+    table, thead, tbody, tr, td, th { display: block; } thead { display: none; }
+    tr { border-bottom: 1px solid var(--line); padding: 8px 0; } td { border: 0; padding: 4px 0; }
+    td:first-child { width: auto; }
+  }
+  @media print {
+    body { background: #fff; } main { border: 0; margin: 0; padding: 0; max-width: none; }
+    h2 { break-after: avoid; } tr, .change, .person { break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="meta">One-pager · Product, Dispatch · 16 October 2026 · For Helen Achebe</div>
+    <h1>Missed isn't No</h1>
+    <p class="sub">What we'd build instead of changing a number, seen by the people it happens to.</p>
+  </header>
+
+  <h2>Problem</h2>
+  <p>Since 4.2 (12 Aug), a ping waits 60 seconds instead of 90. Routing priority scores a <b>missed</b> ping exactly like a <b>turned down</b> one, and the score never recovers by itself. A responder who misses a few pings drops in the order, so they get fewer pings, which means fewer chances to take one and climb back.</p>
+  <div class="stats">
+    <div class="stat"><b>2.3% → 18%</b><span>pings missed, before vs after release day</span></div>
+    <div class="stat"><b>−0.12 vs +0.08</b><span>what a miss costs vs what a take earns back</span></div>
+    <div class="stat"><b>~12 → 3–4</b><span>pings a week for Farlight, The Undertow, Meteor Mite, Vesper</span></div>
+  </div>
+  <p>Farlight got no pings at all from 28 Aug onward, while 16 Uptown callouts went to neighbours. Nobody could see it happening. Two of the four handlers never filed a ticket.</p>
+  <p>The glossary already says missed is "recorded separately from turned down". The code doesn't do that. Wen Li's 2019 note beside it asks whether a score should "ease back" on its own, and nobody answered.</p>
+
+  <h2>Who it's for</h2>
+  <div class="people">
+    <div class="person">
+      <h3>Kip</h3>
+      <div class="role">Handler for Meteor Mite and The Gale</div>
+      <p>Two coverage cards side by side. Mite is dead quiet and texting to ask if something's broken. The Gale is exhausted (+42% pings). Kip's answer to Mite was "hang in there", because the console gave Kip nothing better.</p>
+      <blockquote>"Might as well be two different products." Kip, 4 Sep interview</blockquote>
+    </div>
+    <div class="person">
+      <h3>Meteor Mite</h3>
+      <div class="role">The responder who went quiet</div>
+      <p>One of the four who were shut out. Farlight is the most severe case, and the one we traced ping by ping in the data. We're designing for Mite because Mite's handler is on record. The same design covers Farlight.</p>
+    </div>
+  </div>
+
+  <h2>What changes for them</h2>
+  <div class="change"><div class="num">1</div><div>
+    <h3>A missed ping stops counting as a no.</h3>
+    <p>A miss gets recorded and scored as its own outcome, with a much smaller penalty than a turn-down. Scores also ease back toward neutral over a few weeks, which answers Wen's 2019 question with a yes. Someone who had a bad week of thumbs-on-a-gone-screen isn't still paying for it in October.</p>
+  </div></div>
+
+  <div class="change"><div class="num">2</div><div>
+    <h3>Kip's coverage card says why it's quiet.</h3>
+    <p>When a responder's pings drop well below their usual week, the card shows one plain line. It links to that responder's recent pings (taken, turned down or missed, with the time of each).</p>
+    <div class="mock"><div class="label">Console · Coverage card</div>
+      <div class="alert"><b>Meteor Mite: 3 pings this week (usually ~12).</b> 9 of the last 14 were missed, not turned down. Mite is being offered later in the order in their area. <u>See recent pings</u></div>
+    </div>
+    <p>Kip can now tell Mite something true, like "you're not forgotten, you're missing them, check your notifications". It also explains the other card: The Gale is busy <i>because</i> Mite is quiet.</p>
+  </div></div>
+
+  <div class="change"><div class="num">3</div><div>
+    <h3>Mite's phone tells Mite what happened.</h3>
+    <div class="mock phone"><div class="label">Responder app</div>
+      <div class="note">You missed a ping at 23:14. It went to another responder. Missed pings don't count against you the way turning one down does.</div>
+      <div class="note">Several pings missed recently. Check that notifications are on for Rook.</div>
+    </div>
+    <p>Silence no longer means "something's broken" or "they've dropped me".</p>
+  </div></div>
+
+  <div class="change"><div class="num">4</div><div>
+    <h3>One-time catch-up for the four.</h3>
+    <p>At launch, the four affected responders go back to where their scores stood before 12 Aug, so they don't have to earn their way out of a hole we dug.</p>
+  </div></div>
+
+  <h2>What it deliberately doesn't do</h2>
+  <ul class="nots">
+    <li><b>Change the ping wait.</b> 60 vs 90 seconds is a separate decision, made once Ravi Menon's numbers show what's left.</li>
+    <li><b>Revert the proximity change.</b> The data shows proximity isn't the cause, and it was long requested.</li>
+    <li><b>Add a setting or a knob.</b> Nobody sees a raw routing-priority number, and there's no rank or leaderboard.</li>
+    <li><b>Name who took the callout</b> on the responder's phone. It just says "another responder".</li>
+    <li><b>Touch the Responder Availability Record</b>, so nothing lands in Supply unannounced.</li>
+    <li><b>Assume or reconstruct legal identity</b> (Security Policy 4.1). It uses callout history only.</li>
+    <li><b>Fix late notifications.</b> That's a separate fix; the nudge only points to it.</li>
+    <li><b>Cover other asks:</b> Availability Confidence, Shared cover between responders, dark mode and per-responder alert sounds are all out of scope.</li>
+  </ul>
+
+  <h2>Who benefits</h2>
+  <div class="benefit">
+    <span class="tag t-most">Most</span><span>The four who were shut out and their handlers, Kip and Aunt Dot, plus Farlight's and The Undertow's handlers, whom we haven't spoken to.</span>
+    <span class="tag t-some">Some</span><span>All 16 responders. Each missed more after 12 Aug, and from now on a bad week of misses won't drag their rank down.</span>
+    <span class="tag t-ind">Indirectly</span><span>The Gale and Sgt. Falkirk, whose load evens out. Nadia's team, which gets an answer for the 45 open tickets. Ravi, who gets an acceptance rate that shows missed and turned down separately. Rook, since we price per active responder.</span>
+    <span class="tag t-not">Not fully</span><span>The roughly 11 responders whose pings vanish before they can answer. They stop losing rank, but the pings still vanish until the ping wait is decided.</span>
+  </div>
+
+  <h2>Risks</h2>
+  <table>
+    <thead><tr><th>Risk</th><th>What we'd see</th><th>How we handle it</th></tr></thead>
+    <tbody>
+      <tr><td><b>Too soft on misses.</b>Wen's 2019 "against" case: someone who has really stopped taking work keeps getting pinged.</td><td>Time-to-accept rises; more callouts go unfilled (they rarely go past the third ping).</td><td>A miss still costs something, just less than a turn-down. Wen sets the penalty and recovery rate. Ravi watches time-to-accept and unfilled callouts weekly for the first month.</td></tr>
+      <tr><td><b>Wrong cause for some misses.</b>Misses may be late notifications, not slow answers.</td><td>The nudge tells responders to check settings that are already fine.</td><td>Check delivery times against ping-sent times before launch. If notifications are late, that's its own fix and the copy changes.</td></tr>
+      <tr><td><b>Catch-up resets to the wrong number.</b>Our pre-12 Aug scores come from a replay, not production.</td><td>The four come back too high or too low.</td><td>Wen pulls the real production scores before the reset.</td></tr>
+      <tr><td><b>The neighbours lose work.</b>The Gale and Sgt. Falkirk picked up the four's pings; some will go back.</td><td>Tickets from the other direction.</td><td>Say it up front: that work was never theirs by design, and The Gale is exhausted. Nadia briefs support before launch.</td></tr>
+      <tr><td><b>The card line feels like surveillance.</b>"9 of 14 missed" could read as a scorecard.</td><td>Responders feel watched, or handlers push them.</td><td>The line explains and never ranks. Sofia tests the wording with Kip and one responder.</td></tr>
+      <tr><td><b>Timing.</b>Routing changes ship with the release. Going early is an exception; waiting leaves the four shut out.</td><td>Farlight stays at zero pings.</td><td>Helen decides: exception or next train. If we wait, the catch-up can go first.</td></tr>
+      <tr><td><b>Acceptance rate looks like it jumps.</b>Splitting missed from turned down changes the weekly report.</td><td>Someone reads it as a real change.</td><td>Ravi marks the change and shows both series side by side for a few weeks.</td></tr>
+      <tr><td><b>Thin evidence.</b>Data ends 6 Sep, covers 16 responders, no previous year.</td><td>The pattern doesn't hold in newer data.</td><td>Ravi re-runs the ping analysis on data since 6 Sep before we commit.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Owners and open questions</h2>
+  <dl class="owners">
+    <dt>Marcus Oyelaran</dt><dd>The Dispatch engineering team builds it.</dd>
+    <dt>Wen Li</dt><dd>Sets the miss penalty and the recovery rate.</dd>
+    <dt>Sofia Marino</dt><dd>The card line and the phone copy.</dd>
+    <dt>Nadia Hoffmann</dt><dd>Answers the 45 open callout tickets.</dd>
+    <dt>Ravi Menon</dt><dd>Pings per week for the four; acceptance rate split by turned down vs missed.</dd>
+  </dl>
+  <p style="margin-top:14px"><b>Still open</b></p>
+  <ul class="open">
+    <li>Are the misses slow answers or late notifications?</li>
+    <li>Wen's answer to Marcus's 14 Aug question.</li>
+    <li>Next release train, or an exception?</li>
+  </ul>
+
+  <h2>Next steps</h2>
+  <ol>
+    <li>30 minutes with Wen and Marcus to agree the miss penalty and recovery rate.</li>
+    <li>A click-through of Kip's card and Mite's phone for you to try.</li>
+    <li>Then the code change.</li>
+  </ol>
+  <footer>Sources: pings and support_tickets in rook-database (29 Jun – 7 Sep), dispatch-routing code, 4.2 release page comments, Kip interview (4 Sep).</footer>
+</main>
+</body>
+</html>

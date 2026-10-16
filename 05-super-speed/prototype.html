@@ -1,0 +1,558 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Meteor Mite, through Kip's eyes</title>
+<style>
+  :root {
+    --bg: #eef0f3; --panel: #ffffff; --ink: #1c1f24; --muted: #646b76; --line: #dfe2e7;
+    --accent: #2f5d8a; --accent-soft: #e6eef6;
+    --taken: #2e7d4f; --taken-soft: #e4f3ea;
+    --down: #7a5bb5; --down-soft: #efe9f8;
+    --missed: #b36a12; --missed-soft: #fbefdf;
+    --hot: #b8402f; --hot-soft: #fae6e2;
+    --phone: #111316; --phone-screen: #f7f7f8;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #121417; --panel: #1b1e23; --ink: #e7e8ea; --muted: #9aa1ab; --line: #2f343b;
+      --accent: #8db5dd; --accent-soft: #1f2c3a;
+      --taken: #7fcf9d; --taken-soft: #1c3226;
+      --down: #b9a2e6; --down-soft: #2b2440;
+      --missed: #e8ad62; --missed-soft: #3a2b18;
+      --hot: #ee8e7f; --hot-soft: #3d221d;
+      --phone: #000; --phone-screen: #1e2126;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #121417; --panel: #1b1e23; --ink: #e7e8ea; --muted: #9aa1ab; --line: #2f343b;
+    --accent: #8db5dd; --accent-soft: #1f2c3a;
+    --taken: #7fcf9d; --taken-soft: #1c3226;
+    --down: #b9a2e6; --down-soft: #2b2440;
+    --missed: #e8ad62; --missed-soft: #3a2b18;
+    --hot: #ee8e7f; --hot-soft: #3d221d;
+    --phone: #000; --phone-screen: #1e2126;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif; }
+  button { font: inherit; cursor: pointer; }
+
+  /* Prototype controls (not part of the product) */
+  .proto { background: #1c1f24; color: #fff; padding: 10px 20px; display: flex; flex-wrap: wrap;
+    gap: 10px 16px; align-items: center; font-size: 13px; }
+  .proto b { letter-spacing: .06em; text-transform: uppercase; font-size: 11px; opacity: .7; }
+  .seg { display: inline-flex; flex-wrap: wrap; border: 1px solid rgba(255,255,255,.35); border-radius: 6px; overflow: hidden; }
+  .seg button { background: transparent; color: #fff; border: 0; padding: 5px 11px; }
+  .seg button + button { border-left: 1px solid rgba(255,255,255,.18); }
+  .seg button[aria-pressed="true"] { background: #fff; color: #1c1f24; font-weight: 600; }
+  .seg button .ship { font-size: 10px; opacity: .75; display: block; line-height: 1; }
+  .proto .reset { margin-left: auto; background: transparent; color: #fff; border: 1px solid rgba(255,255,255,.35);
+    border-radius: 6px; padding: 5px 10px; }
+
+  .story { max-width: 1240px; margin: 16px auto 0; padding: 0 24px; }
+  .story p { margin: 0; padding: 10px 14px; border-radius: 8px; background: var(--panel); border: 1px solid var(--line); font-size: 14px; }
+  .story .fact { color: var(--muted); font-size: 12px; margin-top: 4px; padding: 0 2px; background: none; border: 0; }
+
+  .stage { display: grid; grid-template-columns: 1fr 330px; gap: 24px; padding: 16px 24px 24px; max-width: 1240px; margin: 0 auto; }
+  .where { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 8px; }
+
+  /* Console */
+  .console { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; }
+  .topbar { display: flex; align-items: center; gap: 16px; padding: 12px 18px; border-bottom: 1px solid var(--line); }
+  .logo { font-weight: 800; letter-spacing: .02em; }
+  .nav { display: flex; gap: 14px; color: var(--muted); font-size: 14px; }
+  .nav .on { color: var(--ink); font-weight: 600; border-bottom: 2px solid var(--accent); padding-bottom: 2px; }
+  .who { margin-left: auto; font-size: 13px; color: var(--muted); }
+  .console-body { padding: 18px; }
+  .console-head { display: flex; align-items: flex-end; justify-content: space-between; gap: 12px; margin-bottom: 14px; flex-wrap: wrap; }
+  .console-head h1 { font-size: 20px; margin: 0; }
+  .console-head .sub { color: var(--muted); font-size: 13px; }
+  .send { background: var(--accent); color: var(--panel); border: 0; border-radius: 6px; padding: 8px 14px; font-weight: 600; }
+  .send:disabled { opacity: .5; cursor: default; }
+
+  .cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+  .card-head { display: flex; align-items: center; gap: 10px; }
+  .avatar { width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-weight: 700; background: var(--accent-soft); color: var(--accent); flex: none; }
+  .card-head h2 { font-size: 16px; margin: 0; }
+  .card-head .area { font-size: 12px; color: var(--muted); }
+  .status { margin-left: auto; font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--taken-soft); color: var(--taken); }
+  .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+  .tags span { font-size: 11px; border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--muted); }
+  .week { display: flex; align-items: flex-end; gap: 14px; }
+  .week .big { font-size: 30px; font-weight: 700; line-height: 1; }
+  .week .lbl { font-size: 12px; color: var(--muted); }
+  .bars { display: flex; gap: 5px; align-items: flex-end; height: 40px; margin-left: auto; }
+  .bars i { width: 11px; background: var(--accent); opacity: .3; border-radius: 2px; }
+  .bars i.now { opacity: 1; }
+  .bars i.future { opacity: .08; }
+  .split { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--muted); }
+  .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; }
+  .d-taken { background: var(--taken); } .d-down { background: var(--down); } .d-missed { background: var(--missed); }
+
+  .why { border-left: 3px solid var(--missed); background: var(--missed-soft); border-radius: 4px; padding: 9px 11px; font-size: 14px; }
+  .why.busy { border-color: var(--hot); background: var(--hot-soft); }
+  .why.calm { border-color: var(--line); background: transparent; color: var(--muted); }
+  .why b { display: block; margin-bottom: 2px; }
+  .linkbtn { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 600; margin-top: 4px; }
+  .nothing { font-size: 13px; color: var(--muted); font-style: italic; }
+
+  .tell { margin-top: 14px; border: 1px dashed var(--line); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+  .tell small { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin-bottom: 3px; }
+  .tell.today q { font-style: italic; }
+
+  /* Drawer */
+  .drawer { border-top: 1px solid var(--line); margin-top: 16px; padding-top: 14px; display: none; }
+  .drawer.open { display: block; }
+  .drawer h3 { margin: 0 0 8px; font-size: 15px; display: flex; justify-content: space-between; align-items: center; }
+  .drawer h3 button { background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 6px; padding: 2px 8px; font-size: 12px; }
+  .pinglist { list-style: none; margin: 0; padding: 0; max-height: 300px; overflow: auto; }
+  .pinglist li { display: grid; grid-template-columns: 150px 100px 1fr; gap: 10px; padding: 7px 4px; border-bottom: 1px solid var(--line); font-size: 14px; align-items: center; }
+  .pinglist li.new { animation: flash 1.4s ease-out; }
+  .pinglist li.sep { display: block; font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--accent); padding: 6px 4px; border-bottom: 2px solid var(--accent); }
+  @keyframes flash { from { background: var(--accent-soft); } to { background: transparent; } }
+  .pill { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; justify-self: start; }
+  .p-taken { background: var(--taken-soft); color: var(--taken); }
+  .p-down { background: var(--down-soft); color: var(--down); }
+  .p-missed { background: var(--missed-soft); color: var(--missed); }
+  .pinglist .note { color: var(--muted); font-size: 13px; }
+  .drawer .foot { font-size: 12px; color: var(--muted); margin-top: 8px; }
+
+  /* Phone */
+  .phone { background: var(--phone); border-radius: 38px; padding: 12px; width: 300px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,.18); }
+  .screen { background: var(--phone-screen); border-radius: 28px; height: 620px; position: relative; overflow: hidden; display: flex; flex-direction: column; }
+  .notch { width: 110px; height: 24px; background: var(--phone); border-radius: 0 0 14px 14px; margin: 0 auto; }
+  .sb { display: flex; justify-content: space-between; padding: 4px 22px 0; font-size: 12px; font-weight: 600; margin-top: -20px; }
+  .app { padding: 26px 14px 14px; flex: 1; display: flex; flex-direction: column; gap: 10px; overflow: auto; }
+  .app-title { display: flex; align-items: center; justify-content: space-between; }
+  .app-title h2 { margin: 0; font-size: 19px; }
+  .app-title .me { font-size: 12px; color: var(--muted); }
+  .avail { font-size: 12px; padding: 2px 8px; border-radius: 999px; background: var(--taken-soft); color: var(--taken); font-weight: 600; }
+  .idle { text-align: center; color: var(--muted); font-size: 14px; margin: 30px 0 6px; }
+  .idle .ring { width: 64px; height: 64px; border-radius: 50%; border: 2px dashed var(--line); margin: 0 auto 10px; }
+  .msg { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 10px 12px; font-size: 13.5px; }
+  .msg.missed { border-left: 4px solid var(--missed); }
+  .msg.nudge { border-left: 4px solid var(--accent); }
+  .msg.ok { border-left: 4px solid var(--taken); }
+  .msg.down { border-left: 4px solid var(--down); }
+  .msg small { display: block; color: var(--muted); font-size: 11px; margin-bottom: 3px; text-transform: uppercase; letter-spacing: .05em; }
+  .msg.enter { animation: slide .35s ease-out; }
+  .ghost { font-size: 12px; color: var(--muted); font-style: italic; text-align: center; border: 1px dashed var(--line); border-radius: 10px; padding: 8px; }
+  @keyframes slide { from { transform: translateY(-10px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .incoming { position: absolute; inset: 0; background: var(--accent); color: #fff; display: none; flex-direction: column;
+    padding: 50px 22px 28px; gap: 10px; }
+  .incoming.show { display: flex; animation: slide .25s ease-out; }
+  .incoming .kicker { font-size: 12px; text-transform: uppercase; letter-spacing: .1em; opacity: .85; }
+  .incoming h3 { margin: 0; font-size: 22px; line-height: 1.2; }
+  .incoming .det { font-size: 14px; opacity: .9; }
+  .timer { margin-top: auto; text-align: center; }
+  .timer .n { font-size: 44px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .timer .t { font-size: 12px; opacity: .8; }
+  .meter { height: 6px; background: rgba(255,255,255,.25); border-radius: 3px; overflow: hidden; margin: 8px 0 14px; }
+  .meter i { display: block; height: 100%; background: #fff; width: 100%; }
+  .acts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .acts button { border: 0; border-radius: 12px; padding: 13px; font-weight: 700; font-size: 15px; }
+  .acts .take { background: #fff; color: #2f5d8a; }
+  .acts .decline { background: rgba(255,255,255,.18); color: #fff; }
+  .letmiss { background: none; border: 0; color: #fff; opacity: .85; text-decoration: underline; font-size: 13px; margin-top: 8px; }
+
+  .explain { max-width: 1240px; margin: 0 auto; padding: 0 24px 30px; color: var(--muted); font-size: 13px; }
+
+  @media (max-width: 900px) {
+    .stage { grid-template-columns: 1fr; padding: 16px; }
+    .story { padding: 0 16px; }
+    .cards { grid-template-columns: 1fr; }
+    .nav { display: none; }
+    .explain { padding: 0 16px 24px; }
+    .pinglist li { grid-template-columns: 1fr auto; }
+    .pinglist li .note { grid-column: 1 / -1; }
+    .proto .reset { margin-left: 0; }
+  }
+  @media (max-width: 380px) { .phone { width: 100%; } }
+</style>
+</head>
+<body>
+
+<div class="proto" role="region" aria-label="Prototype controls">
+  <b>Prototype</b>
+  <div class="seg" role="group" aria-label="Which version">
+    <button id="modeOld">Today (4.2)</button>
+    <button id="modeNew">With the fix</button>
+  </div>
+  <b>Week of</b>
+  <div class="seg" role="group" aria-label="Week" id="weeks"></div>
+  <button class="reset" id="reset">Reset</button>
+</div>
+
+<div class="story" aria-live="polite">
+  <p id="storyText"></p>
+  <p class="fact" id="storyFact"></p>
+</div>
+
+<div class="stage">
+  <section aria-label="Kip's console">
+    <p class="where">Where it happens · Kip's web console, Coverage view</p>
+    <div class="console">
+      <div class="topbar">
+        <span class="logo">Rook Dispatch</span>
+        <nav class="nav"><span class="on">Coverage</span><span>Callouts</span><span>Responders</span><span>Reports</span></nav>
+        <span class="who">Signed in as Kip</span>
+      </div>
+      <div class="console-body">
+        <div class="console-head">
+          <div>
+            <h1>Coverage · Eastgate</h1>
+            <div class="sub" id="weekSub"></div>
+          </div>
+          <button class="send" id="send">Send a callout to Meteor Mite</button>
+        </div>
+
+        <div class="cards">
+          <article class="card" aria-label="Meteor Mite coverage card">
+            <div class="card-head">
+              <div class="avatar">MM</div>
+              <div><h2>Meteor Mite</h2><div class="area">Eastgate</div></div>
+              <span class="status">Available</span>
+            </div>
+            <div class="tags"><span>flight</span><span>structural-entry</span><span>crowd-management</span></div>
+            <div class="week">
+              <div><div class="big" id="miteCount"></div><div class="lbl">pings this week</div></div>
+              <div class="bars" id="miteBars" aria-hidden="true"></div>
+            </div>
+            <div class="split" id="miteSplit"></div>
+            <div id="miteWhy"></div>
+          </article>
+
+          <article class="card" aria-label="The Gale coverage card">
+            <div class="card-head">
+              <div class="avatar">TG</div>
+              <div><h2>The Gale</h2><div class="area">Eastgate</div></div>
+              <span class="status">Available</span>
+            </div>
+            <div class="tags"><span>flight</span><span>cold-weather</span><span>de-escalation</span></div>
+            <div class="week">
+              <div><div class="big" id="galeCount"></div><div class="lbl">pings this week</div></div>
+              <div class="bars" id="galeBars" aria-hidden="true"></div>
+            </div>
+            <div class="split" id="galeSplit"></div>
+            <div id="galeWhy"></div>
+          </article>
+        </div>
+
+        <div id="tell"></div>
+
+        <div class="drawer" id="drawer" aria-live="polite">
+          <h3>Meteor Mite · recent pings <button id="closeDrawer">Close</button></h3>
+          <ul class="pinglist" id="pinglist"></ul>
+          <div class="foot" id="drawerFoot"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-label="Meteor Mite's phone">
+    <p class="where">Where it happens · Meteor Mite's phone, Rook app</p>
+    <div class="phone">
+      <div class="screen">
+        <div class="notch"></div>
+        <div class="sb"><span id="clock">—</span><span>●●● ▮</span></div>
+        <div class="app">
+          <div class="app-title"><div><h2>Rook</h2><div class="me">Meteor Mite · Eastgate</div></div><span class="avail">Available</span></div>
+          <div id="feed"></div>
+        </div>
+        <div class="incoming" id="incoming" role="dialog" aria-label="Incoming ping">
+          <div class="kicker">Ping · Eastgate</div>
+          <h3>A man in a suit made of mirrors is on the museum roof</h3>
+          <div class="det">Needs: flight · ~5 min away</div>
+          <div class="timer">
+            <div class="n" id="secs">60</div>
+            <div class="t">seconds left (sped up 10× for the demo)</div>
+          </div>
+          <div class="meter"><i id="meter"></i></div>
+          <div class="acts">
+            <button class="decline" id="decline">Turn down</button>
+            <button class="take" id="take">Take it</button>
+          </div>
+          <button class="letmiss" id="letmiss">Let it run out (miss it)</button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<p class="explain">
+  Pings, weeks and Eastgate callouts are Meteor Mite's and The Gale's real records from the pings and callouts tables (27 Jul – 5 Sep).
+  “With the fix” shows what Kip and Meteor Mite would have been told during those same weeks. With the fix, her misses would barely
+  have lowered her place in the order, so the drop itself would have been much smaller. No scores, ranks or other handlers' responders are named anywhere.
+</p>
+
+<script>
+  // Real records, rook-database (pings, callouts). Week = Monday start.
+  const WEEKS = [
+    { key: "2026-07-27", label: "27 Jul", mite: [9, 2, 1], gale: [11, 1, 1], east: 21, miteFirst: 7, galeTook: 11 },
+    { key: "2026-08-03", label: "3 Aug",  mite: [8, 3, 0], gale: [10, 3, 0], east: 19, miteFirst: 5, galeTook: 10 },
+    { key: "2026-08-10", label: "10 Aug", mite: [4, 2, 4], gale: [9, 3, 3],  east: 15, miteFirst: 6, galeTook: 9, ship: true },
+    { key: "2026-08-17", label: "17 Aug", mite: [1, 1, 2], gale: [12, 3, 2], east: 15, miteFirst: 2, galeTook: 12 },
+    { key: "2026-08-24", label: "24 Aug", mite: [0, 1, 1], gale: [14, 4, 2], east: 16, miteFirst: 1, galeTook: 14 },
+    { key: "2026-08-31", label: "31 Aug", mite: [0, 0, 1], gale: [16, 3, 2], east: 17, miteFirst: 0, galeTook: 16 },
+  ];
+  // [sent_at local, outcome, callout area, who took it]
+  const MITE_PINGS = [
+    ["2026-08-03 19:34", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-04 20:34", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-05 13:47", "turned down", "Eastgate", "The Gale"],
+    ["2026-08-05 14:53", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-06 01:14", "turned down", "Foundry Row", "other"],
+    ["2026-08-06 01:21", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-06 05:02", "turned down", "Midtown", "other"],
+    ["2026-08-06 16:20", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-08 07:54", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-08 16:55", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-08 20:43", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-10 14:03", "turned down", "Eastgate", "The Gale"],
+    ["2026-08-10 21:15", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-11 06:41", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-12 19:04", "turned down", "Midtown", "other"],
+    ["2026-08-13 13:43", "missed", "Midtown", "other"],
+    ["2026-08-13 15:12", "missed", "Eastgate", "The Gale"],
+    ["2026-08-14 07:26", "missed", "Eastgate", "The Gale"],
+    ["2026-08-15 15:18", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-15 19:40", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-16 11:16", "missed", "Eastgate", "nobody"],
+    ["2026-08-18 07:37", "turned down", "Eastgate", "The Gale"],
+    ["2026-08-19 17:30", "taken", "Eastgate", "Meteor Mite"],
+    ["2026-08-20 16:41", "missed", "Eastgate", "nobody"],
+    ["2026-08-22 20:53", "missed", "Midtown", "other"],
+    ["2026-08-27 20:03", "turned down", "Midtown", "nobody"],
+    ["2026-08-29 09:15", "missed", "Eastgate", "The Gale"],
+    ["2026-09-05 15:06", "missed", "Midtown", "other"],
+  ].map(([at, outcome, area, by]) => ({ at, outcome, area, by }));
+
+  const MITE_USUAL = 11, GALE_USUAL = 13;
+  const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const MONTHS = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+  const STORY = {
+    "2026-07-27": ["A normal week. Meteor Mite and The Gale split Eastgate between them, and Kip's two cards look alike.",
+                   "Meteor Mite: 12 pings, 1 missed. She was offered first on 7 of 21 Eastgate callouts."],
+    "2026-08-03": ["Still normal. Meteor Mite takes 8 of her 11 pings.",
+                   "No misses all week. Ping wait is 90 seconds."],
+    "2026-08-10": ["4.2 ships on Wednesday 12 Aug. The ping wait drops to 60 seconds. On 13–14 Aug, Meteor Mite misses three pings in a row.",
+                   "Each miss is scored exactly like a turn-down, and her score doesn't recover by itself."],
+    "2026-08-17": ["Meteor Mite drops from about 11 pings a week to 4. Eastgate work starts going to The Gale first.",
+                   "She was offered first on 2 of 15 Eastgate callouts. The Gale took 12."],
+    "2026-08-24": ["Two pings all week, and she takes neither. Kip's cards now 'tell wildly different stories'.",
+                   "Offered first on 1 of 16 Eastgate callouts. The Gale took 14."],
+    "2026-08-31": ["The week Kip talked to Sofia (4 Sep). Meteor Mite is texting Kip to ask if something's broken. Kip tells her to hang in there.",
+                   "One ping all week, on Saturday, and it was missed. The Gale took 16 of 17 Eastgate callouts."],
+  };
+
+  let state;
+  function fresh(prev) {
+    return { mode: prev ? prev.mode : "new", week: prev ? prev.week : 5, live: [],
+             drawerOpen: false, timer: null, flashLive: false };
+  }
+  state = fresh();
+  const $ = id => document.getElementById(id);
+
+  const weekEnd = i => i + 1 < WEEKS.length ? WEEKS[i + 1].key : "2026-09-07";
+  const inWeek = (p, i) => p.at >= WEEKS[i].key && p.at < weekEnd(i);
+  const seen = i => MITE_PINGS.filter(p => p.at < weekEnd(i)).concat(state.live.filter(p => p.week <= i));
+
+  function fmt(at) {
+    if (at === "now") return "Just now";
+    const d = new Date(at.replace(" ", "T") + ":00Z");
+    return `${DAYS[d.getUTCDay()]} ${d.getUTCDate()} ${MONTHS[d.getUTCMonth()]} · ${at.slice(11)}`;
+  }
+
+  function weekNums(i) {
+    const w = WEEKS[i];
+    const live = state.live.filter(p => p.week === i);
+    const add = o => live.filter(p => p.outcome === o).length;
+    const m = [w.mite[0] + add("taken"), w.mite[1] + add("turned down"), w.mite[2] + add("missed")];
+    return { mite: m, miteTotal: m[0] + m[1] + m[2], gale: w.gale, galeTotal: w.gale.reduce((a, b) => a + b, 0) };
+  }
+
+  function bars(el, totals) {
+    el.innerHTML = totals.map((v, i) => {
+      const cls = i === state.week ? "now" : i > state.week ? "future" : "";
+      return `<i class="${cls}" style="height:${Math.max(3, v / 22 * 40)}px" title="Week of ${WEEKS[i].label}: ${v} pings"></i>`;
+    }).join("");
+  }
+
+  function splitHtml(a) {
+    return `<span><i class="dot d-taken"></i>${a[0]} taken</span><span><i class="dot d-down"></i>${a[1]} turned down</span><span><i class="dot d-missed"></i>${a[2]} missed</span>`;
+  }
+
+  function last14(i) {
+    const list = seen(i).slice(-14);
+    const c = { taken: 0, "turned down": 0, missed: 0 };
+    list.forEach(p => c[p.outcome]++);
+    return { list, c };
+  }
+
+  function renderCards() {
+    const i = state.week, w = WEEKS[i], n = weekNums(i), fixed = state.mode === "new";
+    const miteTotals = WEEKS.map((_, k) => weekNums(k).miteTotal);
+    const galeTotals = WEEKS.map((_, k) => weekNums(k).galeTotal);
+
+    $("weekSub").textContent = `Week of ${w.label} · ${w.east} Eastgate callouts` + (w.ship ? " · 4.2 shipped Wed 12 Aug" : "");
+    $("miteCount").textContent = n.miteTotal;
+    $("galeCount").textContent = n.galeTotal;
+    bars($("miteBars"), miteTotals);
+    bars($("galeBars"), galeTotals);
+    $("miteSplit").innerHTML = splitHtml(n.mite);
+    $("galeSplit").innerHTML = splitHtml(n.gale);
+
+    const { c } = last14(i);
+    const sinceMissed = seen(i).filter(p => p.outcome === "missed" && p.at >= "2026-08-12").length;
+    const quiet = n.miteTotal <= MITE_USUAL * 0.6;
+    const missy = n.mite[2] >= 2;
+
+    if (!fixed) {
+      $("miteWhy").innerHTML = `<div class="nothing">No explanation on the card. Kip just sees a low number.</div>`;
+      $("galeWhy").innerHTML = `<div class="nothing">No explanation on the card.</div>`;
+    } else if (quiet) {
+      $("miteWhy").innerHTML = `<div class="why"><b>Meteor Mite is quieter than usual: ${n.miteTotal} ping${n.miteTotal === 1 ? "" : "s"} this week (usually ~${MITE_USUAL}).</b>
+        ${c.missed} of her last ${Math.min(14, seen(i).length)} pings were missed, not turned down. She's being offered later in the order in Eastgate:
+        first on ${w.miteFirst} of ${w.east} callouts this week. Missed pings no longer count like a turn-down, so this should ease.
+        <br><button class="linkbtn" id="openDrawer">See Meteor Mite's recent pings</button></div>`;
+    } else if (missy) {
+      $("miteWhy").innerHTML = `<div class="why"><b>Meteor Mite missed ${n.mite[2]} pings this week.</b>
+        The ping wait is now 60 seconds. Missed pings don't count against her like a turn-down, but if she isn't seeing them, her notifications may be worth a check.
+        <br><button class="linkbtn" id="openDrawer">See Meteor Mite's recent pings</button></div>`;
+    } else {
+      $("miteWhy").innerHTML = `<div class="why calm">Normal week for Meteor Mite. <button class="linkbtn" id="openDrawer">Recent pings</button></div>`;
+    }
+
+    if (fixed) {
+      const busy = n.galeTotal >= GALE_USUAL * 1.25;
+      $("galeWhy").innerHTML = busy
+        ? `<div class="why busy"><b>The Gale is busier than usual: ${n.galeTotal} pings (usually ~${GALE_USUAL}).</b>
+           Took ${w.galeTook} of ${w.east} Eastgate callouts. Some of these would normally be offered to Meteor Mite first.</div>`
+        : `<div class="why calm">Normal week for The Gale.</div>`;
+      const ob = $("openDrawer");
+      if (ob) ob.onclick = () => { state.drawerOpen = true; renderDrawer(); $("drawer").scrollIntoView({ behavior: "smooth", block: "nearest" }); };
+    } else {
+      state.drawerOpen = false;
+    }
+
+    // What Kip can say to Meteor Mite
+    if (!fixed) {
+      $("tell").innerHTML = i >= 3
+        ? `<div class="tell today"><small>What Kip actually told Meteor Mite</small><q>Hang in there, it'll pick up.</q> Kip, 4 Sep: “I don't have anything better than that.”</div>`
+        : "";
+    } else if (quiet || missy) {
+      const msg = quiet
+        ? `You haven't been forgotten. Since 13 Aug you've missed ${sinceMissed} pings, and under 4.2 each one pushed you further down the order in Eastgate. Missed pings don't count like that anymore, and your place has been put back. Please check that Rook notifications are on.`
+        : `You missed ${n.mite[2]} pings this week. Pings now wait 60 seconds instead of 90. Missed pings don't count against you like turning one down, but check that Rook notifications are on.`;
+      $("tell").innerHTML = `<div class="tell"><small>What Kip can tell Meteor Mite now</small>${msg}</div>`;
+    } else {
+      $("tell").innerHTML = "";
+    }
+  }
+
+  function renderDrawer() {
+    $("drawer").classList.toggle("open", state.drawerOpen && state.mode === "new");
+    const i = state.week;
+    const { list, c } = last14(i);
+    const cls = { taken: "p-taken", "turned down": "p-down", missed: "p-missed" };
+    const where = p => {
+      if (p.outcome === "taken") return `Took the callout in ${p.area}`;
+      const dest = p.by === "The Gale" ? "went to The Gale" : p.by === "nobody" ? "nobody took it" : "went to another responder";
+      return (p.outcome === "missed" ? "Ping wait ran out" : "Said no") + ` · ${p.area} · ${dest}`;
+    };
+    const rows = [];
+    list.slice().reverse().forEach((p, k, arr) => {
+      const prev = arr[k - 1];
+      if (prev && prev.at !== "now" && p.at !== "now" && prev.at >= "2026-08-12" && p.at < "2026-08-12") rows.push(`<li class="sep">4.2 ships · 12 Aug · ping wait 90s → 60s</li>`);
+      rows.push(`<li class="${k === 0 && state.flashLive ? "new" : ""}"><span>${fmt(p.at)}</span><span class="pill ${cls[p.outcome]}">${p.outcome}</span><span class="note">${where(p)}</span></li>`);
+    });
+    $("pinglist").innerHTML = rows.join("");
+    state.flashLive = false;
+    $("drawerFoot").textContent = `Last ${list.length} pings: ${c.taken} taken · ${c["turned down"]} turned down · ${c.missed} missed.`;
+  }
+
+  function renderPhone() {
+    const i = state.week, fixed = state.mode === "new";
+    const pings = MITE_PINGS.filter(p => inWeek(p, i)).concat(state.live.filter(p => p.week === i));
+    const items = [];
+    let misses = 0, hidden = 0;
+    pings.forEach(p => {
+      const t = p.at === "now" ? "just now" : fmt(p.at);
+      const time = p.at === "now" ? "now" : p.at.slice(11);
+      if (p.outcome === "taken") items.push({ k: "ok", s: `Taken · ${t}`, x: `You took the callout in ${p.area}.`, live: p.at === "now" });
+      else if (p.outcome === "turned down") items.push({ k: "down", s: `Turned down · ${t}`, x: `You turned down a ping. It went to another responder.`, live: p.at === "now" });
+      else if (fixed) {
+        misses++;
+        items.push({ k: "missed", s: `Missed ping · ${t}`, x: `You missed a ping at ${time}. It went to another responder. Missed pings don't count against you the way turning one down does.`, live: p.at === "now" });
+        if (misses === 2) items.push({ k: "nudge", s: "From Rook", x: "Several pings missed recently. Check that notifications are on for Rook.", live: p.at === "now" });
+      } else hidden++;
+    });
+    items.reverse();
+    let html = items.map(m => `<div class="msg ${m.k} ${m.live ? "enter" : ""}" style="margin-bottom:8px"><small>${m.s}</small>${m.x}</div>`).join("");
+    if (!fixed && hidden) html = `<div class="ghost">${hidden} ping${hidden > 1 ? "s" : ""} came and went without a trace this week. Meteor Mite never sees that she missed ${hidden > 1 ? "them" : "it"}.</div>` + html;
+    if (!items.length) html += `<div class="idle"><div class="ring"></div>Waiting for pings</div>`;
+    $("feed").innerHTML = html;
+    const last = pings.filter(p => p.at !== "now").pop();
+    $("clock").textContent = last ? last.at.slice(11) : "—";
+  }
+
+  function renderControls() {
+    $("modeOld").setAttribute("aria-pressed", state.mode === "old");
+    $("modeNew").setAttribute("aria-pressed", state.mode === "new");
+    $("weeks").innerHTML = WEEKS.map((w, i) =>
+      `<button data-w="${i}" aria-pressed="${i === state.week}">${w.label}${w.ship ? '<span class="ship">4.2 ships</span>' : ""}</button>`).join("");
+    $("weeks").querySelectorAll("button").forEach(b => b.onclick = () => { state.week = +b.dataset.w; render(); });
+    const [a, b] = STORY[WEEKS[state.week].key];
+    $("storyText").textContent = a;
+    $("storyFact").textContent = b;
+  }
+
+  function render() { renderControls(); renderCards(); renderDrawer(); renderPhone(); }
+
+  function sendPing() {
+    if (state.timer) return;
+    $("send").disabled = true;
+    $("incoming").classList.add("show");
+    let left = 60;
+    $("secs").textContent = left; $("meter").style.width = "100%";
+    state.timer = setInterval(() => {
+      left -= 1;
+      $("secs").textContent = left;
+      $("meter").style.width = (left / 60 * 100) + "%";
+      if (left <= 0) resolve("missed");
+    }, 100);
+  }
+
+  function resolve(outcome) {
+    clearInterval(state.timer); state.timer = null;
+    $("incoming").classList.remove("show");
+    $("send").disabled = false;
+    state.live.push({ at: "now", outcome, area: "Eastgate", by: outcome === "taken" ? "Meteor Mite" : "The Gale", week: state.week });
+    state.flashLive = true;
+    if (state.mode === "new") state.drawerOpen = true;
+    render();
+  }
+
+  $("send").onclick = sendPing;
+  $("take").onclick = () => resolve("taken");
+  $("decline").onclick = () => resolve("turned down");
+  $("letmiss").onclick = () => resolve("missed");
+  $("closeDrawer").onclick = () => { state.drawerOpen = false; renderDrawer(); };
+  $("modeOld").onclick = () => { state.mode = "old"; render(); };
+  $("modeNew").onclick = () => { state.mode = "new"; render(); };
+  $("reset").onclick = () => {
+    if (state.timer) { clearInterval(state.timer); }
+    $("incoming").classList.remove("show"); $("send").disabled = false;
+    state = fresh(); render();
+  };
+
+  render();
+</script>
+</body>
+</html>

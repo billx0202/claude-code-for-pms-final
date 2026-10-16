@@ -16,6 +16,32 @@ prompt library built from your own questions.
 
 ### 1.
 
+who does this fix benefit
+
 ### 2.
 
+the risk factors as well
+
 ### 3.
+
+that will be fine. as long as its presentable
+
+### 4.
+
+what doest this fix
+
+### 5.
+
+Save the brief exactly as it stands now as 05-super-speed/brief.md. Show me the file when it's done.
+
+### 6.
+
+delete dup
+
+### 7.
+
+Take the brief you just wrote and build me a working prototype, an actual screen I can click through, not a description of one. Save it as 05-super-speed/prototype.html, a single file I can just open in my browser. Show me where this would actually happen, and make at least one thing on it respond when I click it.
+
+### 8.
+
+Show me this happening to Meteor Mite specifically, using her name, the way Kip would see it.
